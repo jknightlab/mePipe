@@ -1,0 +1,19 @@
+\name{plotQQ}
+\alias{plotQQ}
+\title{Generate Q-Q plot of p-values}
+\usage{
+  plotQQ(me)
+}
+\arguments{
+  \item{me}{Object returned by Matrix_eQTL_main}
+}
+\value{
+  Called for its side effect.
+}
+\description{
+  Generate Q-Q plot of p-values
+}
+\author{
+  Peter Humburg
+}
+
