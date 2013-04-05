@@ -219,15 +219,15 @@ chooseCov <- function(expression, genotype, covariate, candidates = seq(5, 50, b
 				expression = expression, genotype = genotype, output = output, 
 				covThreshold = covThreshold, ...)
 	}
-	covCount <- Reduce(rbind, covCount)
+	covCount <- Reduce(cbind, covCount)
 	
 	if(max(covCount[,1]) > 0){
-		bestCov <- candidates[which.max(covCount[,1])]
+		bestCov <- candidates[which.max(covCount[1,])]
 	} else{
-		bestCov <- candidates[which.max(covCount[,2])]
+		bestCov <- candidates[which.max(covCount[2,])]
 	}
 	
-	list(covariates=candidates, eqtls=list(significant=covCount[,1], all=covCount[,2]), 
+	list(covariates=candidates, eqtls=list(significant=covCount[1,], all=covCount[2,]), 
 			best=file.path(output, paste("me_", bestCov, "_covariates.eQTL", sep="")))
 }
 
