@@ -209,19 +209,25 @@ chooseCov <- function(expression, genotype, covariate, candidates = seq(5, 50, b
 		covThreshold = 0.01, covOpt = getOptions(), output = "covSelect", ...){
 	dir.create(output, showWarnings = FALSE)
 	
-	
-	Rsge::sge.parParApply(candidates, .submitChooseCov, covOpt = covOpt, covariate = covariate, 
-			expression = expression, genotype = genotype, output = output, 
-			covThreshold = covThreshold, ..., 
-			nobj=if(sge.getOption("sge.use.cluster"))length(candidates)else 1)
-	
-	if(max(allCounts) > 0){
-		bestCov <- candidates[which.max(allCounts)]
+	if(sge.getOption("sge.use.cluster")){
+		covCount <- Rsge::sge.parParApply(candidates, .submitChooseCov, covOpt = covOpt, covariate = covariate, 
+				expression = expression, genotype = genotype, output = output, 
+				covThreshold = covThreshold, ..., 
+				nobj=if(sge.getOption("sge.use.cluster"))length(candidates)else 1)
 	} else{
-		bestCov <- candidates[which.max(totalCounts)]
+		covCount <- lapply(candidates, .submitChooseCov, covOpt = covOpt, covariate = covariate, 
+				expression = expression, genotype = genotype, output = output, 
+				covThreshold = covThreshold, ...)
+	}
+	covCount <- Reduce(rbind, covCount)
+	
+	if(max(covCount[,1]) > 0){
+		bestCov <- candidates[which.max(covCount[,1])]
+	} else{
+		bestCov <- candidates[which.max(covCount[,2])]
 	}
 	
-	list(covariates=candidates, eqtls=list(significant=allCounts, all=totalCounts), 
+	list(covariates=candidates, eqtls=list(significant=covCount[,1], all=covCount[,2]), 
 			best=file.path(output, paste("me_", bestCov, "_covariates.eQTL", sep="")))
 }
 
