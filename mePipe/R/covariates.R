@@ -17,7 +17,7 @@
 allCovariates <- function(expression, exprOpt = getOptions(), output, sep = "\t"){
 	
 	## load gene expression data
-	if(sge.getOption("sge.use.cluster")){
+	if(!is.null(sge.getOption("sge.use.cluster")) && sge.getOption("sge.use.cluster")){
 		Rsge::sge.run(.submitAllCovariates, exprOpt = exprOpt, expression = expression, 
 				output = output, sep = sep)
 	} else{
@@ -87,7 +87,7 @@ covAssoc <- function(genotype, covariate, otherCov, output, covOut, genoOpt = ge
 	if(model == "cross") model <- "linear"
 
 	## identify all covariates that are signifcantly associated with genotypes
-	if(sge.getOption("sge.use.cluster")){
+	if(!is.null(sge.getOption("sge.use.cluster")) && sge.getOption("sge.use.cluster")){
 		Rsge::sge.run(.submitCovAssoc, covariate = covariate, genotype = genotype, 
 				output = output, covOpt = covOpt, genoOpt = genoOpt, threshold = threshold, 
 				model = model, exclude = exclude, otherCov = otherCov, covOut = covOut)
@@ -209,11 +209,11 @@ chooseCov <- function(expression, genotype, covariate, candidates = seq(5, 50, b
 		covThreshold = 0.01, covOpt = getOptions(), output = "covSelect", ...){
 	dir.create(output, showWarnings = FALSE)
 	
-	if(sge.getOption("sge.use.cluster")){
+	if(!is.null(sge.getOption("sge.use.cluster")) && sge.getOption("sge.use.cluster")){
 		covCount <- Rsge::sge.parParApply(candidates, .submitChooseCov, covOpt = covOpt, covariate = covariate, 
 				expression = expression, genotype = genotype, output = output, 
 				covThreshold = covThreshold, ..., 
-				nobj=if(sge.getOption("sge.use.cluster"))length(candidates)else 1)
+				nobj=if(!is.null(sge.getOption("sge.use.cluster")) && sge.getOption("sge.use.cluster"))length(candidates)else 1)
 	} else{
 		covCount <- lapply(candidates, .submitChooseCov, covOpt = covOpt, covariate = covariate, 
 				expression = expression, genotype = genotype, output = output, 

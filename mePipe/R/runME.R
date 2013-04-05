@@ -48,7 +48,7 @@ runME <- function(expression, genotype, covariate, error, snpsPos, genePos,
 	}
 	if(cis < 0) cisThreshold <- 0
 	
-	if(sge.getOption("sge.use.cluster")){
+	if(!is.null(sge.getOption("sge.use.cluster")) && sge.getOption("sge.use.cluster")){
 		Rsge::sge.run(.submitRunME, error = error, expression = expression, exprOpt = exprOpt, 
 				genotype = genotype, genoOpt = genoOpt, covariate = covariate, 
 				combineSlicedData = combineSlicedData, cis = cis, snpsPos = snpsPos, 
@@ -101,7 +101,7 @@ runME <- function(expression, genotype, covariate, error, snpsPos, genePos,
 		snps$LoadFile(genotype)
 	}
 	## covariates (if any)
-	if(!missing(covariate)){
+	if(!missing(covariate) && !is.null(covariate)){
 		if(is(covariate, "SlicedData")){
 			cvrt <- covariate
 		} else{
