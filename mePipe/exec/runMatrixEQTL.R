@@ -71,10 +71,12 @@ option_list <- list(
 				help="Flag indicationg whether the SNPs in 'snpspos' are sorted by genomic coordinate. [default: %default]"),
 		make_option(c("--ldBlocks"), action="store_true", default=FALSE,
 				help="Flag indicating whether eQTLs should be summarised by LD block. [default: %default]"),
-		make_option(c("--maxDist"), default=500L,
+		make_option(c("--maxDist"), default=1e5L,
 				help="Maximum distance allowed between two adjacent SNPs within an LD block. [default: %default]"),
 		make_option(c("--maxSNPs"), default=200L,
 				help="Maximum number of SNPs to consider for each LD block. [default: %default]"),
+		make_option(c("--ldFDR"), default=0.05,
+				help="Maximum FDR of eQTLs to be included in list of SNPs for each block. [default: %default]"),
 		make_option(c("--ldOnly"), action="store_true", default=FALSE,
 				help="Compute LD blocks for existing eQTL results. This assumes that previous results can be loaded from the file implied by '--output'. Implies '--ldBlocks'"),
 		make_option(c("-d", "--delim"), default = '\t',
@@ -346,21 +348,21 @@ if(opt$ldBlocks){
 	if(!is.null(me$all) && !is.null(me$all$eqtls)){
 		message("Computing LD structure...")
 		blocks <- getLDblocks(me$all$eqtls, arguments$args[2], pos, dist=opt$maxDist, 
-				window=opt$maxSNPs, verbose=opt$verbose)
+				window=opt$maxSNPs, verbose=opt$verbose, minFDR=opt$ldFDR)
 		write.table(blocks, file=paste(opt$output, "LD", sep="_"), 
 				quote=FALSE, row.names=FALSE, sep="\t")
 	} else{
 		if(!is.null(me$cis) && !is.null(me$cis$eqtls)){
 			message("Computing LD structure for cis associations...")
 			blocks <- getLDblocks(me$cis$eqtls, arguments$args[2], pos, dist=opt$maxDist, 
-					window=opt$maxSNPs, verbose=opt$verbose)
+					window=opt$maxSNPs, verbose=opt$verbose, minFDR=opt$ldFDR)
 			write.table(blocks, file=paste(opt$cisoutput, "LD", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
 		if(!is.null(me$trans) && !is.null(me$trans$eqtls)){
 			message("Computing LD structure for trans associations...")
 			blocks <- getLDblocks(me$trans$eqtls, arguments$args[2], pos, dist=opt$maxDist,
-					window=opt$maxSNPs, verbose=opt$verbose)
+					window=opt$maxSNPs, verbose=opt$verbose, minFDR=opt$ldFDR)
 			write.table(blocks, file=paste(opt$output, "LD", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
