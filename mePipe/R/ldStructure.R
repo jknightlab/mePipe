@@ -45,12 +45,13 @@ getLDblocks <- function(eqtls, genotype, pos, dist=500, window=200,
 			stop("Row names of argument ", sQuote("pos"), " should correspond to SNP IDs.")
 		}
 	}
+	chroms <- unique(subset(pos, rownames(pos) %in% eqtls$snp)$pos)
 	if(sge.getOption("sge.use.cluster")){
-		ans <- Rsge::sge.parParApply(unique(pos$chrom), .submitLDblocks, genoOpt=genoOpt, 
+		ans <- Rsge::sge.parParApply(chroms, .submitLDblocks, genoOpt=genoOpt, 
 				genotype=genotype, eqtls=eqtls,	verbose=verbose, pos=pos, dist=dist, 
 				window=window, minFDR=minFDR, nobj=length(unique(pos$chrom)))
 	} else{
-		ans <- lapply(unique(pos$chrom), .submitLDblocks, genoOpt=genoOpt, 
+		ans <- lapply(chroms, .submitLDblocks, genoOpt=genoOpt, 
 				genotype=genotype, eqtls=eqtls,	verbose=verbose, pos=pos, dist=dist, 
 				window=window, minFDR=minFDR)
 	}
