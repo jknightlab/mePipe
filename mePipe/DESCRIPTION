@@ -9,10 +9,10 @@ Description: Functions to support running of Matrix-eQTL analysis pipeline.
     This includes support for adding principle components as covariates and
     determining the optimal number of principal components to include.
 License: GPL (>= 2)
+Depends: Rsge
 Imports:
     MatrixEQTL,
-    trio,
-    Rsge
+    trio
 Suggests:
     optparse
 Collate:
