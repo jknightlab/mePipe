@@ -45,7 +45,7 @@ getLDblocks <- function(eqtls, genotype, pos, dist=500, window=200,
 			stop("Row names of argument ", sQuote("pos"), " should correspond to SNP IDs.")
 		}
 	}
-	chroms <- unique(subset(pos, rownames(pos) %in% eqtls$snp)$pos)
+	chroms <- unique(as.character(pos[rownames(pos) %in% eqtls$snps, "chrom"]))
 	if(sge.getOption("sge.use.cluster")){
 		ans <- Rsge::sge.parParApply(chroms, .submitLDblocks, genoOpt=genoOpt, 
 				genotype=genotype, eqtls=eqtls,	verbose=verbose, pos=pos, dist=dist, 
@@ -60,7 +60,7 @@ getLDblocks <- function(eqtls, genotype, pos, dist=500, window=200,
 	ans[order(ans$pvalue),]
 }
 
-.submitLDblocks <- function(chrom, genoOpt, genotype, eqtls, verbose, pos, dist, window, minFDR) {
+.submitLDblocks <- function(chromosome, genoOpt, genotype, eqtls, verbose, pos, dist, window, minFDR) {
 	## load genotypes
 	geno <- SlicedData$new();
 	geno$fileDelimiter <- genoOpt$sep
@@ -71,7 +71,7 @@ getLDblocks <- function(eqtls, genotype, pos, dist=500, window=200,
 	geno$LoadFile(genotype)
 	
 	## Compute LD blocks
-	eqtls <- subset(eqtls, snps %in% rownames(subset(pos, chrom == chrom)))
+	eqtls <- subset(eqtls, snps %in% rownames(subset(pos, chrom == chromosome)))
 	candidates <- unique(as.character(eqtls$snps))
 	blocks <- vector(mode="list", length(candidates))
 	nextEntry <- 1
@@ -97,13 +97,16 @@ getLDblocks <- function(eqtls, genotype, pos, dist=500, window=200,
 	ans <- by(eqtls, list(eqtls$block, eqtls$gene), 
 			function(x){
 				peak <- x$snps[which.min(x$FDR)]
-				data.frame(chrom=eqtls$chrom[1], start=blocks[[x$block]][["start"]], 
-						end=blocks[[x$block]][["end"]], peak=x$snps[peak], gene=x$gene[1],
-						statistic=x[[3]][peak], pvalue=x[["p-value"]][peak], FDR=x[["FDR"]][peak],
-						snps=paste(subset(x, FDR <= minFDR)$snps, collapse=","), stringsAsFactors=FALSE)
+				data.frame(chrom=chromosome, start=blocks[[x$block[1]]][["start"]], 
+						end=blocks[[x$block[1]]][["end"]], peak=peak, gene=x$gene[1],
+						statistic=subset(x, snps==peak)$statistic, 
+						pvalue=subset(x, snps==peak)$pvalue, FDR=subset(x, snps==peak)$FDR,
+						snps=paste(subset(x, FDR <= minFDR)$snps, collapse=","), 
+						stringsAsFactors=FALSE)
 			}
 	)
 	ans <- Reduce(rbind, ans)
+	ans
 }
 
 
