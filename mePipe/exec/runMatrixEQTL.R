@@ -14,7 +14,7 @@ library(grDevices)
 library(graphics)
 library(methods)
 suppressPackageStartupMessages(library("optparse"))
-library("mePipe")
+suppressPackageStartupMessages(library("mePipe"))
 
 options(warn=1)
 ##TODO: add option to permute columns
