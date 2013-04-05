@@ -4,7 +4,7 @@
 table of possible covariates.}
 \usage{
   allCovariates(expression, exprOpt = getOptions(), output,
-    sep = "\t", useCluster = FALSE)
+    sep = "\t")
 }
 \arguments{
   \item{expression}{Name of file containing the gene
@@ -18,9 +18,6 @@ table of possible covariates.}
 
   \item{sep}{Character used to separate entries in output
   file.}
-
-  \item{useCluster}{Logical indicating whether jobs should
-  be submitted to an SGE cluster or run locally.}
 }
 \value{
   \code{data.frame} with all principle components

@@ -5,7 +5,7 @@
   covAssoc(genotype, covariate, otherCov, output, covOut,
     genoOpt = getOptions(), covOpt = getOptions(),
     model = c("linear", "anova", "cross"),
-    threshold = 1e-05, exclude = 0.001, useCluster = FALSE)
+    threshold = 1e-05, exclude = 0.001)
 }
 \arguments{
   \item{genotype}{Name of file with genotyping data.}
@@ -31,9 +31,6 @@
 
   \item{exclude}{FDR threshold below which associations are
   considered to be significant.}
-
-  \item{useCluster}{Logical indicating whether jobs should
-  be submitted to an SGE cluster or run locally.}
 }
 \value{
   A character vector with the names of covariates that had

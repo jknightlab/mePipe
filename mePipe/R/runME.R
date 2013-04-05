@@ -22,24 +22,22 @@
 #' @param verbose Flag indicating whether additional progress information should be printed.
 #' @param qqplot Flag indicating whether a QQ plot of p-values should be generated 
 #' rather than a histogram.
-#'  @param useCluster Logical indicating whether jobs should be submitted to an SGE cluster 
-#' or run locally.
 #' @return The object returned by \code{\link[MatrixEQTL]{Matrix_eQTL_main}}
-#' 
+#' @note Before calling this function a call to \code{sge.setDefaultOptions} has to be made.
 #' @author Peter Humburg
 #' @import MatrixEQTL
+#' @import Rsge
 #' @export
 runME <- function(expression, genotype, covariate, error, snpsPos, genePos,
 		output="", cisOutput=paste(output, "cis", sep="."), 
 		exprOpt=getOptions(), genoOpt=getOptions(),	covOpt=getOptions(), 
 		threshold=1e-5, cisThreshold=1e-3, model=c('linear', 'anova', 'cross'), cis=1e6, bins=0, 
-		verbose=FALSE, qqplot=FALSE, useCluster=FALSE){
+		verbose=FALSE, qqplot=FALSE){
 	model <- match.arg(model)
 	model <- switch(model,
 			linear = modelLINEAR,
 			anova = modelANOVA,
 			cross = modelLINEAR_CROSS)
-	
 	if(missing(snpsPos) || missing(genePos)){
 		if(cis > 0){
 			warning("SNP and gene positions are required to distinguish between cis- and trans-effects.")
@@ -50,7 +48,7 @@ runME <- function(expression, genotype, covariate, error, snpsPos, genePos,
 	}
 	if(cis < 0) cisThreshold <- 0
 	
-	if(useCluster){
+	if(sge.getOption("sge.use.cluster")){
 		Rsge::sge.run(.submitRunME, error = error, expression = expression, exprOpt = exprOpt, 
 				genotype = genotype, genoOpt = genoOpt, covariate = covariate, 
 				combineSlicedData = combineSlicedData, cis = cis, snpsPos = snpsPos, 

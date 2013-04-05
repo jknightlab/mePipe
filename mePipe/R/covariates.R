@@ -10,16 +10,14 @@
 #' @param exprOpt Options for reading of gene expression data.
 #' @param output Name of file to which the principle components should be saved (optional).
 #' @param sep Character used to separate entries in output file.
-#' @param useCluster Logical indicating whether jobs should be submitted to an SGE cluster 
-#' or run locally. 
 #' @return \code{data.frame} with all principle components
 #' 
 #' @author Peter Humburg
 #' @export
-allCovariates <- function(expression, exprOpt = getOptions(), output, sep = "\t", useCluster=FALSE){
+allCovariates <- function(expression, exprOpt = getOptions(), output, sep = "\t"){
 	
 	## load gene expression data
-	if(useCluster){
+	if(sge.getOption("sge.use.cluster")){
 		Rsge::sge.run(.submitAllCovariates, exprOpt = exprOpt, expression = expression, 
 				output = output, sep = sep)
 	} else{
@@ -75,8 +73,6 @@ allCovariates <- function(expression, exprOpt = getOptions(), output, sep = "\t"
 #' @param threshold p-value threshold up to which variants should be reported.
 #' @param exclude FDR threshold below which associations are considered to be
 #' significant. 
-#' @param useCluster Logical indicating whether jobs should be submitted to an SGE cluster 
-#' or run locally.
 #' @return A character vector with the names of covariates that had significant associations.
 #' @details All covariates in the input file that produce significant associations with
 #' SNPs are removed and the remaining ones are written to \code{covOut}.
@@ -85,13 +81,13 @@ allCovariates <- function(expression, exprOpt = getOptions(), output, sep = "\t"
 #' @export
 covAssoc <- function(genotype, covariate, otherCov, output, covOut, genoOpt = getOptions(),
 		covOpt = getOptions(), model = c('linear', 'anova', 'cross'), 
-		threshold = 1e-5, exclude = 1e-3, useCluster=FALSE){
+		threshold = 1e-5, exclude = 1e-3){
 	model <- match.arg(model)
 	## the interaction test uses a linear model, use this as base for covariate selection
 	if(model == "cross") model <- "linear"
 
 	## identify all covariates that are signifcantly associated with genotypes
-	if(useCluster){
+	if(sge.getOption("sge.use.cluster")){
 		Rsge::sge.run(.submitCovAssoc, covariate = covariate, genotype = genotype, 
 				output = output, covOpt = covOpt, genoOpt = genoOpt, threshold = threshold, 
 				model = model, exclude = exclude, otherCov = otherCov, covOut = covOut)
@@ -193,7 +189,6 @@ combineSlicedData <- function(x, y){
 #' @param covThreshold FDR threshold to use when determining the number of significant eQTLs.
 #' @param covOpt List of options to use for reading of covariate data. 
 #' @param output Name of output directory
-#' @param useCluster Logical indicating whether jobs should be submited to SGE or run locally. 
 #' @param ... Addition parameters for \code{\link{runME}}
 #' @return A list with elements
 #' \item{covariates}{Numeric vector with the number of covariates used in each iteration.}
@@ -208,17 +203,17 @@ combineSlicedData <- function(x, y){
 #' 
 #' @author Peter Humburg
 #' @import MatrixEQTL
+#' @import Rsge
 #' @export
 chooseCov <- function(expression, genotype, covariate, candidates = seq(5, 50, by = 5), 
-		covThreshold = 0.01, covOpt = getOptions(), output = "covSelect", useCluster=FALSE,
-		...){
+		covThreshold = 0.01, covOpt = getOptions(), output = "covSelect", ...){
 	dir.create(output, showWarnings = FALSE)
 	
 	
 	Rsge::sge.parParApply(candidates, .submitChooseCov, covOpt = covOpt, covariate = covariate, 
 			expression = expression, genotype = genotype, output = output, 
-			covThreshold = covThreshold, ..., nobj=if(useCluster)length(candidates)else 1, 
-			cluster=useCluster)
+			covThreshold = covThreshold, ..., 
+			nobj=if(sge.getOption("sge.use.cluster"))length(candidates)else 1)
 	
 	if(max(allCounts) > 0){
 		bestCov <- candidates[which.max(allCounts)]

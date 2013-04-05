@@ -15,14 +15,13 @@
 #' @param genoOpt List of options for reading of genotype data.
 #' @param minFDR Minimum FDR required for a SNP to be reported as part of a block of associations
 #' for a given gene.
-#' @param useCluster Logical indicating whether jobs should be submited to SGE or run locally.
 #' @return A \code{data.frame} with single SNP eQTLs replaced by associations between LD blocks 
 #' and gene expression.
 #' @seealso \code{\link{ldBlock}} \code{{\link{getOptions}}}
 #' @author Peter Humburg
 #' @export
 getLDblocks <- function(eqtls, genotype, pos, dist=500, window=200, 
-		genoOpt=getOptions(), verbose=FALSE, minFDR=0.05, useCluster=FALSE){
+		genoOpt=getOptions(), verbose=FALSE, minFDR=0.05){
 	## check inputs
 	if(!is(eqtls, "data.frame")){
 		stop("Argument ", sQuote("eqtls"), " has to be a ", dQuote("data.frame"))
@@ -48,7 +47,7 @@ getLDblocks <- function(eqtls, genotype, pos, dist=500, window=200,
 	}
 	ans <- Rsge::sge.parParApply(unique(pos$chrom), .submitLDblocks, genoOpt=genoOpt, 
 			genotype=genotype, eqtls=eqtls,	verbose=verbose, pos=pos, dist=dist, 
-			window=window, minFDR=minFDR, nobj=length(unique(pos$chrom)), cluster=useCluster)
+			window=window, minFDR=minFDR, nobj=length(unique(pos$chrom)))
 	
 	ans <- Reduce(rbind, ans)
 	

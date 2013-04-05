@@ -4,7 +4,7 @@
 \usage{
   getLDblocks(eqtls, genotype, pos, dist = 500,
     window = 200, genoOpt = getOptions(), verbose = FALSE,
-    minFDR = 0.05, useCluster = FALSE)
+    minFDR = 0.05)
 }
 \arguments{
   \item{eqtls}{A \code{data.frame} with eQTLs as generated
@@ -31,9 +31,6 @@
   \item{minFDR}{Minimum FDR required for a SNP to be
   reported as part of a block of associations for a given
   gene.}
-
-  \item{useCluster}{Logical indicating whether jobs should
-  be submited to SGE or run locally.}
 }
 \value{
   A \code{data.frame} with single SNP eQTLs replaced by

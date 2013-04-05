@@ -230,6 +230,10 @@ if(opt$cisthreshold > 0){
 if(!opt$ldOnly) message(" R objects: ", paste(opt$output, "rdata", sep = '.'))
 message("")
 
+## set-up environment for Rsge
+sge.setDefaultOptions()
+sge.options(sge.use.cluster=opt$cluster)
+
 if(!opt$ldOnly){
 	if(opt$selectcov){
 		message("Selecting optimal number of PCA covariates ...")
@@ -239,7 +243,7 @@ if(!opt$ldOnly){
 			allCovariates(arguments$args[1], 
 					getOptions(sep = opt$delim, missing = opt$missing, rowskip = opt$rowskip, 
 							colskip = opt$colskip, slice = opt$slice), 
-					opt$pcacov, opt$delim, useCluster=opt$cluster)
+					opt$pcacov, opt$delim)
 		}
 		else{
 			message("  Using PCA covariates in ", opt$pcacov)
@@ -254,7 +258,7 @@ if(!opt$ldOnly){
 								colskip = opt$colskip, slice = opt$slice),
 						getOptions(sep = opt$delim, missing = opt$missing, rowskip = opt$rowskip, 
 								colskip = opt$colskip, slice = opt$slice),
-						opt$model, opt$filterthreshold, opt$excludecov, useCluster=opt$cluster)
+						opt$model, opt$filterthreshold, opt$excludecov)
 				message("  Excluding ", length(pcaAssoc), " PCs associated with genotype (FDR < ", 
 						opt$excludecov, ")")
 				message("  Excluded PCs: ", pcaAssoc)
@@ -294,7 +298,7 @@ if(!opt$ldOnly){
 				snpsPos = opt$snpspos,
 				genePos = opt$genepos,
 				cis = opt$cisdist,
-				bins = opt$bins, qqplot = opt$qqplot, useCluster=opt$cluster)
+				bins = opt$bins, qqplot = opt$qqplot)
 		covSelected <- if(max(selected$eqtls$significant) > 0) {
 					selected$covariates[which.max(selected$eqtls$significant)]
 				} else {
@@ -328,7 +332,7 @@ if(!opt$ldOnly){
 				getOptions(sep = opt$delim, missing = opt$missing, 
 						rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice),
 				opt$pthreshold, opt$cisthreshold, opt$model, opt$cisdist, opt$bins, opt$verbose,
-				opt$qqplot, useCluster=opt$cluster)
+				opt$qqplot)
 	}
 }
 if(opt$ldBlocks){
@@ -342,21 +346,21 @@ if(opt$ldBlocks){
 	if(!is.null(me$all) && !is.null(me$all$eqtls)){
 		message("Computing LD structure...")
 		blocks <- getLDblocks(me$all$eqtls, arguments$args[2], pos, dist=opt$maxDist, 
-				window=opt$maxSNPs, verbose=opt$verbose, useCluster=opt$cluster)
+				window=opt$maxSNPs, verbose=opt$verbose)
 		write.table(blocks, file=paste(opt$output, "LD", sep="_"), 
 				quote=FALSE, row.names=FALSE, sep="\t")
 	} else{
 		if(!is.null(me$cis) && !is.null(me$cis$eqtls)){
 			message("Computing LD structure for cis associations...")
 			blocks <- getLDblocks(me$cis$eqtls, arguments$args[2], pos, dist=opt$maxDist, 
-					window=opt$maxSNPs, verbose=opt$verbose, useCluster=opt$cluster)
+					window=opt$maxSNPs, verbose=opt$verbose)
 			write.table(blocks, file=paste(opt$cisoutput, "LD", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
 		if(!is.null(me$trans) && !is.null(me$trans$eqtls)){
 			message("Computing LD structure for trans associations...")
 			blocks <- getLDblocks(me$trans$eqtls, arguments$args[2], pos, dist=opt$maxDist,
-					window=opt$maxSNPs, verbose=opt$verbose, useCluster=opt$cluster)
+					window=opt$maxSNPs, verbose=opt$verbose)
 			write.table(blocks, file=paste(opt$output, "LD", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}

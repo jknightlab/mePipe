@@ -4,8 +4,7 @@
 \usage{
   chooseCov(expression, genotype, covariate,
     candidates = seq(5, 50, by = 5), covThreshold = 0.01,
-    covOpt = getOptions(), output = "covSelect",
-    useCluster = FALSE, ...)
+    covOpt = getOptions(), output = "covSelect", ...)
 }
 \arguments{
   \item{expression}{Name of file containing the gene
@@ -27,9 +26,6 @@
   covariate data.}
 
   \item{output}{Name of output directory}
-
-  \item{useCluster}{Logical indicating whether jobs should
-  be submited to SGE or run locally.}
 
   \item{...}{Addition parameters for \code{\link{runME}}}
 }

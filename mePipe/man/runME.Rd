@@ -9,8 +9,7 @@
     covOpt = getOptions(), threshold = 1e-05,
     cisThreshold = 0.001,
     model = c("linear", "anova", "cross"), cis = 1e+06,
-    bins = 0, verbose = FALSE, qqplot = FALSE,
-    useCluster = FALSE)
+    bins = 0, verbose = FALSE, qqplot = FALSE)
 }
 \arguments{
   \item{expression}{File name of gene expression data or a
@@ -60,9 +59,6 @@
 
   \item{qqplot}{Flag indicating whether a QQ plot of
   p-values should be generated rather than a histogram.}
-
-  \item{useCluster}{Logical indicating whether jobs should
-  be submitted to an SGE cluster or run locally.}
 }
 \value{
   The object returned by
@@ -70,6 +66,10 @@
 }
 \description{
   Run Matrix-eQTL analysis
+}
+\note{
+  Before calling this function a call to
+  \code{sge.setDefaultOptions} has to be made.
 }
 \author{
   Peter Humburg
