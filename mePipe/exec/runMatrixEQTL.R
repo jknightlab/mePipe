@@ -49,13 +49,13 @@ option_list <- list(
 				help = "Remove PCA covariates that are significantly associated with genotype or other covariates."),
 		make_option(c('--excludecov'), default = 1e-3,
 						help = "FDR threshold below which associations between principle components and genotypes are considered significant. [default: %default]"),
-		make_option(c('--pcacov'), default = "pca_covariates.txt", 
-				help = "Name of file with principle components of gene expression (will be created if it doesn't exist)"),
-		make_option(c('--filterpca'), default = "pca_covariates.filtered.txt",
+		make_option(c('--pcacov'), default = "[output]_pca_covariates.txt", 
+				help = "Name of file with principle components of gene expression (will be created if it doesn't exist). [default: %default]"),
+		make_option(c('--filterpca'), default = "[output]_pca_covariates.filtered.txt",
 				help = "Name of file with filtered PCA covariates (will be created if it doesn't exist). [default: %default]"),
 		make_option(c('--filterthreshold'), default = 1e-3,
 				help = "P-value theshold up to which associations should be reported in the PCA association analysis. [default: %default]"),
-		make_option(c('--filterout'), default = "pca_covariates.assoc",
+		make_option(c('--filterout'), default = "[output]_pca_covariates.assoc",
 				help = "Name of output file for PCA association analysis. [default: %default]"),
 		make_option(c('--mincov'), default = 5L, 
 				help = "Minimum number of PCA covariates to include. [default: %default]"),
@@ -65,7 +65,7 @@ option_list <- list(
 				help = "Step size to use when evaluating different numbers of PCA covariates"),
 		make_option(c("--covthreshold"), default = 1e-3,
 				help = "FDR threshold below which associations between PCA covariates and genotypes should be considered significant. [default: %default]"),
-		make_option(c("--covout"), default = "covSelect",
+		make_option(c("--covout"), default = "[output]_covSelect",
 				help = "Name of output directory for covariate selection. This is interpreted relative to the output directory. [default: %default]"),
 		make_option(c("--sortedSNPs"), action="store_true", default=FALSE,
 				help="Flag indicationg whether the SNPs in 'snpspos' are sorted by genomic coordinate. [default: %default]"),
@@ -238,6 +238,12 @@ sge.options(sge.use.cluster=opt$cluster)
 
 if(!opt$ldOnly){
 	if(opt$selectcov){
+		## add output prefix to file names (unless custom names were provided)
+		opt$pcacov <- gsub("[output]", opt$output, opt$pcacov, fixed=TRUE)
+		opt$filterpca <- gsub("[output]", opt$output, opt$filterpca, fixed=TRUE)
+		opt$covout <- gsub("[output]", opt$output, opt$covout, fixed=TRUE)
+		opt$filterout <- gsub("[output]", opt$output, opt$filterout, fixed=TRUE)
+		
 		message("Selecting optimal number of PCA covariates ...")
 		if(!file.exists(opt$pcacov) && (!opt$filtercov || !file.exists(opt$filterpca)) ){
 			## create PCA covariates
