@@ -2,14 +2,15 @@ Package: mePipe
 Type: Package
 Title: Matrix-eQTL pipeline
 Version: 1.1.5
-Date: 2013-04-22
+Date: 2013-04-23
 Author: Peter Humburg
 Maintainer: Peter Humburg <humburg@well.ox.ac.uk>
 Description: Functions to support running of Matrix-eQTL analysis pipeline.
     This includes support for adding principle components as covariates and
     determining the optimal number of principal components to include.
 License: GPL (>= 2)
-Depends: Rsge
+Depends:
+    Rsge
 Imports:
     MatrixEQTL,
     trio

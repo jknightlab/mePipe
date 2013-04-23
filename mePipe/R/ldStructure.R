@@ -13,8 +13,9 @@
 #' @param window Size of window around each eQTL (in number of SNPs) in which LD 
 #' calculations are carried out.
 #' @param genoOpt List of options for reading of genotype data.
-#' @param minFDR Minimum FDR required for a SNP to be reported as part of a block of associations
-#' for a given gene.
+#' @param minFDR Minimum (FDR) significance level required for a SNP to be reported as part 
+#' of a block of associations for a given gene. Only blocks that contain at least one significant
+#' SNP at this level will be reported.
 #' @return A \code{data.frame} with single SNP eQTLs replaced by associations between LD blocks 
 #' and gene expression.
 #' @seealso \code{\link{ldBlock}} \code{{\link{getOptions}}}
@@ -45,19 +46,23 @@ getLDblocks <- function(eqtls, genotype, pos, dist=500, window=200,
 			stop("Row names of argument ", sQuote("pos"), " should correspond to SNP IDs.")
 		}
 	}
-	chroms <- unique(as.character(pos[rownames(pos) %in% eqtls$snps, "chrom"]))
-	if(!is.null(sge.getOption("sge.use.cluster")) && sge.getOption("sge.use.cluster")){
-		ans <- Rsge::sge.parLapply(chroms, .submitLDblocks, genoOpt=genoOpt, 
-				genotype=genotype, eqtls=eqtls,	verbose=verbose, pos=pos, dist=dist, 
-				window=window, minFDR=minFDR, njobs=length(unique(pos$chrom)))
-	} else{
-		ans <- lapply(chroms, .submitLDblocks, genoOpt=genoOpt, 
-				genotype=genotype, eqtls=eqtls,	verbose=verbose, pos=pos, dist=dist, 
-				window=window, minFDR=minFDR)
-	}
-	ans <- Reduce(rbind, ans)
 	
-	ans[order(ans$pvalue),]
+	eqtls <- subset(eqtls, FDR <= minFDR)
+	if(nrow(eqtls) > 0){
+		chroms <- unique(as.character(pos[rownames(pos) %in% eqtls$snps, "chrom"]))
+		if(!is.null(sge.getOption("sge.use.cluster")) && sge.getOption("sge.use.cluster")){
+			ans <- Rsge::sge.parLapply(chroms, .submitLDblocks, genoOpt=genoOpt, 
+					genotype=genotype, eqtls=eqtls,	verbose=verbose, pos=pos, dist=dist, 
+					window=window, minFDR=minFDR, njobs=length(unique(pos$chrom)))
+		} else{
+			ans <- lapply(chroms, .submitLDblocks, genoOpt=genoOpt, 
+					genotype=genotype, eqtls=eqtls,	verbose=verbose, pos=pos, dist=dist, 
+					window=window, minFDR=minFDR)
+		}
+		ans <- Reduce(rbind, ans)
+		
+		ans[order(ans$pvalue),]
+	}
 }
 
 .submitLDblocks <- function(chromosome, genoOpt, genotype, eqtls, verbose, pos, dist, window, minFDR) {
@@ -77,8 +82,9 @@ getLDblocks <- function(eqtls, genotype, pos, dist=500, window=200,
 	nextEntry <- 1
 	while(length(candidates) > 0){
 		if(verbose) message(" computing LD block for ", candidates[1])
-		blocks[[nextEntry]] <- ldBlock(candidates[1], geno, pos, dist, window)
-		if(!is.null(blocks[[nextEntry]])){
+		ans <- ldBlock(candidates[1], geno, pos, dist, window)
+		if(!is.null(ans)){
+			blocks[[nextEntry]] <- ans
 			names(blocks)[nextEntry] <- candidates[1]
 			candidates <- setdiff(candidates, blocks[[nextEntry]][["snps"]])
 			nextEntry <- nextEntry + 1
@@ -90,22 +96,25 @@ getLDblocks <- function(eqtls, genotype, pos, dist=500, window=200,
 		blocks <- blocks[-(nextEntry:length(blocks))]
 	}
 	
-	## link eQTLs to blocks
-	eqtls$block <- sapply(eqtls$snps, function(x) which(sapply(blocks, function(y) x %in% y$snps))[1])
+	if(length(blocks) > 0){
+		## link eQTLs to blocks
+		eqtls$block <- sapply(eqtls$snps, function(x) which(sapply(blocks, function(y) x %in% y$snps))[1])
+		
+		## replace single SNP eQTL results with LD block eQTLs
+		ans <- by(eqtls, list(eqtls$block, eqtls$gene), 
+				function(x){
+					peak <- x$snps[which.min(x$FDR)]
+					data.frame(chrom=chromosome, start=blocks[[x$block[1]]][["start"]], 
+							end=blocks[[x$block[1]]][["end"]], peak=peak, gene=x$gene[1],
+							statistic=subset(x, snps==peak)$statistic, 
+							pvalue=subset(x, snps==peak)$pvalue, FDR=subset(x, snps==peak)$FDR,
+							snps=paste(subset(x, FDR <= minFDR)$snps, collapse=","), 
+							stringsAsFactors=FALSE)
+				}
+		)
+		ans <- Reduce(rbind, ans)
+	}
 	
-	## replace single SNP eQTL results with LD block eQTLs
-	ans <- by(eqtls, list(eqtls$block, eqtls$gene), 
-			function(x){
-				peak <- x$snps[which.min(x$FDR)]
-				data.frame(chrom=chromosome, start=blocks[[x$block[1]]][["start"]], 
-						end=blocks[[x$block[1]]][["end"]], peak=peak, gene=x$gene[1],
-						statistic=subset(x, snps==peak)$statistic, 
-						pvalue=subset(x, snps==peak)$pvalue, FDR=subset(x, snps==peak)$FDR,
-						snps=paste(subset(x, FDR <= minFDR)$snps, collapse=","), 
-						stringsAsFactors=FALSE)
-			}
-	)
-	ans <- Reduce(rbind, ans)
 	ans
 }
 

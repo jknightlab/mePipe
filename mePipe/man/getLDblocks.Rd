@@ -28,9 +28,11 @@
   \item{genoOpt}{List of options for reading of genotype
   data.}
 
-  \item{minFDR}{Minimum FDR required for a SNP to be
-  reported as part of a block of associations for a given
-  gene.}
+  \item{minFDR}{Minimum (FDR) significance level required
+  for a SNP to be reported as part of a block of
+  associations for a given gene. Only blocks that contain
+  at least one significant SNP at this level will be
+  reported.}
 }
 \value{
   A \code{data.frame} with single SNP eQTLs replaced by

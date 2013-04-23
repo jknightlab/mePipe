@@ -76,7 +76,7 @@ option_list <- list(
 		make_option(c("--maxSNPs"), default=200L,
 				help="Maximum number of SNPs to consider for each LD block. [default: %default]"),
 		make_option(c("--ldFDR"), default=0.05,
-				help="Maximum FDR of eQTLs to be included in list of SNPs for each block. [default: %default]"),
+				help="Maximum FDR of eQTLs to be included in list of SNPs for each block. Only blocks with at least one SNP significant at this level will be reported. [default: %default]"),
 		make_option(c("--ldOnly"), action="store_true", default=FALSE,
 				help="Compute LD blocks for existing eQTL results. This assumes that previous results can be loaded from the file implied by '--output'. Implies '--ldBlocks'"),
 		make_option(c("-d", "--delim"), default = '\t',
@@ -146,6 +146,7 @@ if(opt$qqplot && opt$bins == 0){
 	warning("Q-Q plot was requested but 'bins' is 0. No plots will be produced.")
 }
 
+opt$cisoutput <- paste(opt$output, 'cis', sep = '.')
 ## check whether we are running a position aware analysis and print summary of options
 if(opt$cisthreshold > 0 && !opt$ldOnly){
 	if(opt$cisdist == 0){
@@ -166,7 +167,6 @@ if(opt$cisthreshold > 0 && !opt$ldOnly){
 				opt$cisdist, "\n cis p-value: ", opt$cisthreshold)
 		message(" SNP positions: ", opt$snpspos, "\n Gene positions: ", opt$genepos)
 	}
-	opt$cisoutput <- paste(opt$output, 'cis', sep = '.')
 }
 if(opt$cisthreshold == 0 && !opt$ldOnly){
 	if(opt$pthreshold == 0){
@@ -175,7 +175,6 @@ if(opt$cisthreshold == 0 && !opt$ldOnly){
 		stop()
 	}
 	message("Running analysis without positional information with\n p-value: ", opt$pthreshold)
-	opt$cisoutput <- ''
 	opt$cisdist <- 0
 }
 if(!opt$ldOnly){
