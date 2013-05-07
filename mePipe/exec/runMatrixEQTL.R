@@ -260,7 +260,7 @@ if(!opt$ldOnly){
 				## remove PCA covariates that are associated with genotype or other covariates (if testing for interaction)
 				message("  Computing associations between covariates and genotypes ...")
 				pcaAssoc <- covAssoc(arguments$args[2], opt$pcacov, c(opt$covariate, opt$interaction),
-						file.path(dirname(opt$output), opt$filterout), opt$filterpca,
+						opt$filterout, opt$filterpca,
 						getOptions(sep = opt$delim, missing = opt$missing, rowskip = opt$rowskip, 
 								colskip = opt$colskip, slice = opt$slice),
 						getOptions(sep = opt$delim, missing = opt$missing, rowskip = opt$rowskip, 
@@ -297,7 +297,7 @@ if(!opt$ldOnly){
 				covariate=covariate, candidates=candidates,
 				covThreshold=opt$covthreshold, covOpt=fileOpt,
 				exprOpt = fileOpt, genoOpt = fileOpt,
-				output=file.path(dirname(opt$output),opt$covout), threshold = opt$pthreshold,
+				output=opt$covout, threshold = opt$pthreshold,
 				model = opt$model, 
 				error = opt$error, 
 				verbose = opt$verbose,
