@@ -100,7 +100,8 @@ covAssoc <- function(genotype, covariate, otherCov, output, covOut, genoOpt = ge
 }
 
 #' @author Peter Humburg
-.submitCovAssoc <- function(covariate, genotype, output, covOpt, genoOpt, threshold, model, exclude, otherCov, covOut) {
+.submitCovAssoc <- function(covariate, genotype, output, covOpt, genoOpt, threshold, model, 
+		exclude, otherCov, covOut) {
 	me <- runME(covariate, genotype, output = output, exprOpt=covOpt,
 			genoOpt = genoOpt, threshold = threshold, model = model, cis = -1)
 	assoc <- unique(as.character(me$all$eqtls$gene[me$all$eqtls$FDR <= exclude]))
