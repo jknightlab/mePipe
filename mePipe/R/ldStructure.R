@@ -50,15 +50,9 @@ getLDblocks <- function(eqtls, genotype, pos, dist=500, window=200,
 	eqtls <- subset(eqtls, FDR <= minFDR)
 	if(nrow(eqtls) > 0){
 		chroms <- unique(as.character(pos[rownames(pos) %in% eqtls$snps, "chrom"]))
-		if(!is.null(sge.getOption("sge.use.cluster")) && sge.getOption("sge.use.cluster")){
-			ans <- Rsge::sge.parLapply(chroms, .submitLDblocks, genoOpt=genoOpt, 
-					genotype=genotype, eqtls=eqtls,	verbose=verbose, pos=pos, dist=dist, 
-					window=window, minFDR=minFDR, njobs=length(unique(pos$chrom)))
-		} else{
-			ans <- lapply(chroms, .submitLDblocks, genoOpt=genoOpt, 
-					genotype=genotype, eqtls=eqtls,	verbose=verbose, pos=pos, dist=dist, 
-					window=window, minFDR=minFDR)
-		}
+		ans <- Rsge::sge.parLapply(chroms, .submitLDblocks, genoOpt=genoOpt, 
+				genotype=genotype, eqtls=eqtls,	verbose=verbose, pos=pos, dist=dist, 
+				window=window, minFDR=minFDR, njobs=length(unique(pos$chrom)))
 		ans <- Reduce(rbind, ans)
 		
 		ans[order(ans$pvalue),]

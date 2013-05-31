@@ -210,16 +210,10 @@ chooseCov <- function(expression, genotype, covariate, candidates = seq(5, 50, b
 		covThreshold = 0.01, covOpt = getOptions(), output = "covSelect", ...){
 	dir.create(output, showWarnings = FALSE)
 	
-	if(!is.null(sge.getOption("sge.use.cluster")) && sge.getOption("sge.use.cluster")){
-		covCount <- Rsge::sge.parLapply(candidates, .submitChooseCov, covOpt = covOpt, covariate = covariate, 
-				expression = expression, genotype = genotype, output = output, 
-				covThreshold = covThreshold, ..., 
-				njobs=length(candidates))
-	} else{
-		covCount <- lapply(candidates, .submitChooseCov, covOpt = covOpt, covariate = covariate, 
-				expression = expression, genotype = genotype, output = output, 
-				covThreshold = covThreshold, ...)
-	}
+	covCount <- Rsge::sge.parLapply(candidates, .submitChooseCov, covOpt = covOpt, covariate = covariate, 
+			expression = expression, genotype = genotype, output = output, 
+			covThreshold = covThreshold, ..., 
+			njobs=length(candidates))
 	covCount <- Reduce(cbind, covCount)
 	
 	if(max(covCount[,1]) > 0){
