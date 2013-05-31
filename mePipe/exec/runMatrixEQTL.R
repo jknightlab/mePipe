@@ -387,7 +387,7 @@ if(opt$ldPairs){
 			groups <- getLDpairs(me$trans$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2,
 					genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
 							rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
-			write.table(blocks, file=paste(opt$output, "LDpair", sep="_"), 
+			write.table(groups, file=paste(opt$output, "LDpair", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
 	}
