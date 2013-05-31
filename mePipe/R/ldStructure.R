@@ -226,7 +226,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 		## get list of R-sq for between peak SNP for each gene and all other SNPs
 		## that have significant associations with that gene
 		proxies <- sge.parLapply(unique(as.character(eqtls$gene)), .submitLDpairs, 
-				geno=genotype, minR=minR, genoOpt=genoOpt)
+				eqtls=eqtls, geno=genotype, minR=minR, genoOpt=genoOpt)
 	}
 	ans
 }
@@ -254,7 +254,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 		} else {
 			## get list of R-sq for between peak SNP for each gene and all other SNPs
 			## that have significant associations with that gene
-			snpMat <- toSnpMatrix(geno, as.character(eqtl$snps))
+			snpMat <- toSnpMatrix(geno, as.character(eqtls$snps))
 			ld <- snpStats::ld(snpMat[,1], snpMat[,-1], stats="R.squared")
 			proxies <- data.frame(snps=colnames(ld), Rsquared=ld[1,], stringsAsFactors=FALSE)
 			proxies <-subset(proxies, Rsquared >= minR)
