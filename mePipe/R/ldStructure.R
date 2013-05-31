@@ -264,7 +264,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 			proxies <-subset(proxies, Rsquared >= minR)
 			selected <- subset(eqtls, snps == peak)
 			selected$others <- paste(proxies$snps, collapse=",")
-			selected$Rsquared <- paste(sprintf("%03f", proxies$Rsquared), collapse=",")
+			selected$Rsquared <- paste(sprintf("%.03f", proxies$Rsquared), collapse=",")
 			ans <- rbind(ans, selected)
 		}
 		eqtls <- subset(eqtls, !snps %in% c(peak, proxies$snps))
