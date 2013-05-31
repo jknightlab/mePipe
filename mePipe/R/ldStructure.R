@@ -224,10 +224,10 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 		ans <- sge.parLapply(unique(as.character(eqtls$gene)), .submitLDpairs, 
 				eqtls=eqtls, geno=genotype, minR=minR, genoOpt=genoOpt)
 	}
-	ans
+	Reduce(rbind, ans)
 }
 
-.submitLDpairs <- function(gene, eqtls, genotype, minR, genoOpt){
+.submitLDpairs <- function(selGene, eqtls, genotype, minR, genoOpt){
 	## load genotypes
 	geno <- SlicedData$new();
 	geno$fileDelimiter <- genoOpt$sep
@@ -237,7 +237,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 	geno$fileSliceSize <- genoOpt$slice
 	geno$LoadFile(genotype)
 	
-	eqtls <- subset(eqtls, gene == gene)
+	eqtls <- subset(eqtls, gene == selGene)
 	eqtls <- eqtls[order(eqtls$pvalue),]
 	ans <- data.frame(snps=character(), gene=character(), statistic=numeric(), 
 			pvalue=numeric(), FDR=numeric(), others=character(), Rsquared=character(),
