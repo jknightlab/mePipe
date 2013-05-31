@@ -9,6 +9,7 @@ getSNP <- function(data, snp){
 }
 
 #' Extract named SNPs from SlicedData object and return them as aSnpMatrix
+#' @importClassesFrom snpStats
 toSnpMatrix <- function(data, snps){
 	ans <- lapply(snps, getSNP, data=data)
 	ans <- t(Reduce(rbind, ans))

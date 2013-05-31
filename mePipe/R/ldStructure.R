@@ -222,10 +222,12 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 	}
 	
 	eqtls <- subset(eqtls, FDR <= minFDR)
+	ans <- data.frame(snps=character(), gene=character(), statistic=numeric(), 
+			pvalue=numeric(), FDR=numeric(), others=character(), Rsquared=character())
 	if(nrow(eqtls) > 0){
 		## get list of R-sq for between peak SNP for each gene and all other SNPs
 		## that have significant associations with that gene
-		proxies <- sge.parLapply(unique(as.character(eqtls$gene)), .submitLDpairs, 
+		ans <- sge.parLapply(unique(as.character(eqtls$gene)), .submitLDpairs, 
 				eqtls=eqtls, geno=genotype, minR=minR, genoOpt=genoOpt)
 	}
 	ans
@@ -247,10 +249,12 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 			pvalue=numeric(), FDR=numeric(), others=character(), Rsquared=character(),
 			stringsAsFactors=FALSE)
 	while(nrow(eqtls) > 0){
+		peak <- as.character(eqtls$snps[1])
 		if(nrow(eqtls) == 1){
 			eqtls$others <- NA
 			eqtls$Rsquared <- NA
-			ans <- eqtls
+			proxies <- data.frame(snps=character(), Rsquared=numeric(), stringsAsFactors=FALSE)
+			ans <- rbind(ans, eqtls)
 		} else {
 			## get list of R-sq for between peak SNP for each gene and all other SNPs
 			## that have significant associations with that gene
@@ -258,13 +262,12 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 			ld <- snpStats::ld(snpMat[,1], snpMat[,-1], stats="R.squared")
 			proxies <- data.frame(snps=colnames(ld), Rsquared=ld[1,], stringsAsFactors=FALSE)
 			proxies <-subset(proxies, Rsquared >= minR)
-			peak <- eqtls$snps[1]
 			selected <- subset(eqtls, snps == peak)
 			selected$others <- paste(proxies$snps, collapse=",")
 			selected$Rsquared <- paste(sprintf("%03f", proxies$Rsquared), collapse=",")
 			ans <- rbind(ans, selected)
-			eqtls <- subset(eqtls, !snps %in% c(peak, proxies$snps))
 		}
+		eqtls <- subset(eqtls, !snps %in% c(peak, proxies$snps))
 	}
 	ans
 }
