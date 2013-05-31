@@ -71,12 +71,16 @@ option_list <- list(
 				help="Flag indicationg whether the SNPs in 'snpspos' are sorted by genomic coordinate. [default: %default]"),
 		make_option(c("--ldBlocks"), action="store_true", default=FALSE,
 				help="Flag indicating whether eQTLs should be summarised by LD block. [default: %default]"),
+		make_option(c("--ldPairs"), action="store_true", default=FALSE,
+				help="Flag indicating whether eQTLs should be grouped based on pairwise measures of LD. This differs from `ldBlocks` in that all SNPs that have R^2 > `ldR2` with the peak SNP will be grouped together and no attempt is made to infer local LD patterns. [default: %default]"),
 		make_option(c("--maxDist"), default=1e5L,
 				help="Maximum distance allowed between two adjacent SNPs within an LD block. [default: %default]"),
 		make_option(c("--maxSNPs"), default=200L,
 				help="Maximum number of SNPs to consider for each LD block. [default: %default]"),
 		make_option(c("--ldFDR"), default=0.05,
 				help="Maximum FDR of eQTLs to be included in list of SNPs for each block. Only blocks with at least one SNP significant at this level will be reported. [default: %default]"),
+		make_option(c("--ldR2"), default=0.85,
+				help="Minimum R^2 between two eSNPs for them to be considered part of the same signal by `ldPairs`. [default: %default]"),
 		make_option(c("--ldOnly"), action="store_true", default=FALSE,
 				help="Compute LD blocks for existing eQTL results. This assumes that previous results can be loaded from the file implied by '--output'. Implies '--ldBlocks'"),
 		make_option(c("-d", "--delim"), default = '\t',
@@ -100,7 +104,7 @@ parser <- OptionParser(usage = "%prog [options] expression_file genotype_file", 
 arguments <- parse_args(parser, positional_arguments = TRUE)
 opt <- arguments$options
 
-if(opt$ldOnly) opt$ldBlocks <- TRUE
+if(opt$ldOnly && !opt$ldBlocks) opt$ldPairs <- TRUE
 
 ## check that positional arguments are present
 if(length(arguments$args) < 2){
@@ -340,6 +344,29 @@ if(!opt$ldOnly){
 						rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice),
 				opt$pthreshold, opt$cisthreshold, opt$model, opt$cisdist, opt$bins, opt$verbose,
 				opt$qqplot)
+	}
+}
+if(opt$ldPairs){
+	load(paste(opt$output, 'rdata', sep='.'))
+	
+	if(!is.null(me$all) && !is.null(me$all$eqtls)){
+		message("Computing pairwise LD ...")
+		groups <- getLDpairs(me$all$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2)
+		write.table(groups, file=paste(opt$output, "LDpair", sep="_"), 
+				quote=FALSE, row.names=FALSE, sep="\t")
+	} else{
+		if(!is.null(me$cis) && !is.null(me$cis$eqtls)){
+			message("Computing pairwise LD for cis associations...")
+			groups <- getLDpairs(me$cis$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2)
+			write.table(groups, file=paste(opt$cisoutput, "LDpair", sep="_"), 
+					quote=FALSE, row.names=FALSE, sep="\t")
+		}
+		if(!is.null(me$trans) && !is.null(me$trans$eqtls)){
+			message("Computing pairwise LD for trans associations...")
+			groups <- getLDpairs(me$trans$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2)
+			write.table(blocks, file=paste(opt$output, "LDpair", sep="_"), 
+					quote=FALSE, row.names=FALSE, sep="\t")
+		}
 	}
 }
 if(opt$ldBlocks){
