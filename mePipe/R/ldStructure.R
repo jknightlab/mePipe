@@ -220,22 +220,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 	if(!"gene" %in% names(eqtls)){
 		stop("Argument ", sQuote("eqtls"), " is missing column ", sQuote("gene"))
 	}
-	if(!is(pos, "data.frame")){
-		stop("Argument ", sQuote("pos"), " has to be a ", dQuote("data.frame"))
-	}
-	if(!all(c("chrom", "pos") %in% names(pos))){
-		stop("Argument ", sQuote("pos"), " has to have columns ", sQuote("chrom"), " and ",
-				sQuote("pos"))
-	}
 	
-	if(is.null(rownames(pos)) ){
-		idx <- which(tolower(colnames(pos)) == "snp" | tolower(colnames(pos)) == "id")
-		if(length(idx) == 1){
-			rownames(pos) <- as.character(pos[,idx])
-		} else{
-			stop("Row names of argument ", sQuote("pos"), " should correspond to SNP IDs.")
-		}
-	}
 	eqtls <- subset(eqtls, FDR <= minFDR)
 	if(nrow(eqtls) > 0){
 		## get list of R-sq for between peak SNP for each gene and all other SNPs
@@ -246,7 +231,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 	ans
 }
 
-.submitLDpairs <- function(gene, eqtls, geno, minR, genoOpt){
+.submitLDpairs <- function(gene, eqtls, genotype, minR, genoOpt){
 	## load genotypes
 	geno <- SlicedData$new();
 	geno$fileDelimiter <- genoOpt$sep
@@ -269,8 +254,8 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 		} else {
 			## get list of R-sq for between peak SNP for each gene and all other SNPs
 			## that have significant associations with that gene
-			genotypes <- toSnpMatrix(geno, as.character(eqtl$snps))
-			ld <- snpStats::ld(genotypes[,1], genotypes[,-1], stats="R.squared")
+			snpMat <- toSnpMatrix(geno, as.character(eqtl$snps))
+			ld <- snpStats::ld(snpMat[,1], snpMat[,-1], stats="R.squared")
 			proxies <- data.frame(snps=colnames(ld), Rsquared=ld[1,], stringsAsFactors=FALSE)
 			proxies <-subset(proxies, Rsquared >= minR)
 			peak <- eqtls$snps[1]

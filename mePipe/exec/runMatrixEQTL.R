@@ -198,6 +198,11 @@ if(opt$ldBlocks){
 	message("  maximum number of SNPs per block: ", opt$maxSNPs)
 	message("  maximum gap between SNPs within block: ", opt$maxDist)
 }
+if(opt$ldPairs){
+	message(" eQTLs will be grouped by pairwise LD with peak SNP")
+	message("  FDR threshold for reported associations: ", opt$ldFDR)
+	message("  minimum R^2 with peak SNP required: ", opt$ldR2)
+}
 
 message("\nInput files:")
 if(opt$ldOnly){
@@ -220,16 +225,28 @@ if(opt$cisthreshold > 0){
 	if(opt$ldBlocks){
 		message(" LD blocks for cis associations: ", paste(opt$cisoutput, "LD", sep="_"))
 	}
+	if(opt$ldPairs){
+		message(" SNP groups based on pairwise LD for cis associations: ", paste(opt$cisoutput, 
+						"LDpair", sep="_"))
+	}
 	if(opt$pthreshold > 0){
 		if(!opt$ldOnly) message(" Trans associations: ", opt$output)
 		if(opt$ldBlocks){
 			message(" LD blocks for trans associations: ", paste(opt$output, "LD", sep="_"))
+		}
+		if(opt$ldBlocks){
+			message(" SNP groups based on pairwise for trans associations: ", paste(opt$output, 
+							"LDpair", sep="_"))
 		}
 	}
 } else{
 	if(!opt$ldOnly) message(" All associations: ", opt$output)
 	if(opt$ldBlocks){
 		message(" LD blocks for all associations: ", paste(opt$output, "LD", sep="_"))
+	}
+	if(opt$ldPair){
+		message(" SNP groups based on pairwise LD for all associations: ", 
+				paste(opt$output, "LDpair", sep="_"))
 	}
 }
 if(!opt$ldOnly) message(" R objects: ", paste(opt$output, "rdata", sep = '.'))
@@ -351,19 +368,25 @@ if(opt$ldPairs){
 	
 	if(!is.null(me$all) && !is.null(me$all$eqtls)){
 		message("Computing pairwise LD ...")
-		groups <- getLDpairs(me$all$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2)
+		groups <- getLDpairs(me$all$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2,
+				genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
+						rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
 		write.table(groups, file=paste(opt$output, "LDpair", sep="_"), 
 				quote=FALSE, row.names=FALSE, sep="\t")
 	} else{
 		if(!is.null(me$cis) && !is.null(me$cis$eqtls)){
 			message("Computing pairwise LD for cis associations...")
-			groups <- getLDpairs(me$cis$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2)
+			groups <- getLDpairs(me$cis$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2,
+					genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
+							rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
 			write.table(groups, file=paste(opt$cisoutput, "LDpair", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
 		if(!is.null(me$trans) && !is.null(me$trans$eqtls)){
 			message("Computing pairwise LD for trans associations...")
-			groups <- getLDpairs(me$trans$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2)
+			groups <- getLDpairs(me$trans$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2,
+					genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
+							rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
 			write.table(blocks, file=paste(opt$output, "LDpair", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
@@ -380,21 +403,27 @@ if(opt$ldBlocks){
 	if(!is.null(me$all) && !is.null(me$all$eqtls)){
 		message("Computing LD structure...")
 		blocks <- getLDblocks(me$all$eqtls, arguments$args[2], pos, dist=opt$maxDist, 
-				window=opt$maxSNPs, verbose=opt$verbose, minFDR=opt$ldFDR)
+				window=opt$maxSNPs, verbose=opt$verbose, minFDR=opt$ldFDR,
+				genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
+						rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
 		write.table(blocks, file=paste(opt$output, "LD", sep="_"), 
 				quote=FALSE, row.names=FALSE, sep="\t")
 	} else{
 		if(!is.null(me$cis) && !is.null(me$cis$eqtls)){
 			message("Computing LD structure for cis associations...")
 			blocks <- getLDblocks(me$cis$eqtls, arguments$args[2], pos, dist=opt$maxDist, 
-					window=opt$maxSNPs, verbose=opt$verbose, minFDR=opt$ldFDR)
+					window=opt$maxSNPs, verbose=opt$verbose, minFDR=opt$ldFDR,
+					genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
+							rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
 			write.table(blocks, file=paste(opt$cisoutput, "LD", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
 		if(!is.null(me$trans) && !is.null(me$trans$eqtls)){
 			message("Computing LD structure for trans associations...")
 			blocks <- getLDblocks(me$trans$eqtls, arguments$args[2], pos, dist=opt$maxDist,
-					window=opt$maxSNPs, verbose=opt$verbose, minFDR=opt$ldFDR)
+					window=opt$maxSNPs, verbose=opt$verbose, minFDR=opt$ldFDR,
+					genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
+							rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
 			write.table(blocks, file=paste(opt$output, "LD", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
