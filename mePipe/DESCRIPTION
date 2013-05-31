@@ -1,7 +1,7 @@
 Package: mePipe
 Type: Package
 Title: Matrix-eQTL pipeline
-Version: 1.1.6
+Version: 1.1.7
 Date: 2013-05-07
 Author: Peter Humburg
 Maintainer: Peter Humburg <humburg@well.ox.ac.uk>
@@ -13,7 +13,8 @@ Depends:
     Rsge
 Imports:
     MatrixEQTL,
-    trio
+    trio,
+    snpStats
 Suggests:
     optparse
 Collate:
@@ -23,3 +24,4 @@ Collate:
     'plotQQ.R'
     'runME.R'
     'ldStructure.R'
+    'utils.R'
