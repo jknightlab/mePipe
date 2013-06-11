@@ -218,26 +218,27 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 	eqtls <- subset(eqtls, FDR <= minFDR)
 	ans <- data.frame(snps=character(), gene=character(), statistic=numeric(), 
 			pvalue=numeric(), FDR=numeric(), others=character(), Rsquared=character())
+
 	if(nrow(eqtls) > 0){
+		## load genotypes
+		geno <- SlicedData$new()
+		geno$fileDelimiter <- genoOpt$sep
+		geno$fileOmitCharacters <- genoOpt$missing
+		geno$fileSkipRows <- genoOpt$rowskip
+		geno$fileSkipColumns <- genoOpt$colskip
+		geno$fileSliceSize <- genoOpt$slice 
+		geno$LoadFile(genotype)
+		
 		## get list of R-sq for between peak SNP for each gene and all other SNPs
 		## that have significant associations with that gene
 		genes <- unique(as.character(eqtls$gene))
-		ans <- sge.parLapply(genes, .submitLDpairs, eqtls=eqtls, geno=genotype, minR=minR, 
+		ans <- sge.parLapply(genes, .submitLDpairs, eqtls=eqtls, geno=geno, minR=minR, 
 				genoOpt=genoOpt, njobs=length(genes))
 	}
 	Reduce(rbind, ans)
 }
 
-.submitLDpairs <- function(selGene, eqtls, genotype, minR, genoOpt){
-	## load genotypes
-	geno <- SlicedData$new();
-	geno$fileDelimiter <- genoOpt$sep
-	geno$fileOmitCharacters <- genoOpt$missing
-	geno$fileSkipRows <- genoOpt$rowskip
-	geno$fileSkipColumns <- genoOpt$colskip
-	geno$fileSliceSize <- genoOpt$slice
-	geno$LoadFile(genotype)
-	
+.submitLDpairs <- function(selGene, eqtls, geno, minR, genoOpt){
 	eqtls <- subset(eqtls, gene == selGene)
 	eqtls <- eqtls[order(eqtls$pvalue),]
 	ans <- data.frame(snps=character(), gene=character(), statistic=numeric(), 
@@ -258,8 +259,13 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 			proxies <- data.frame(snps=colnames(ld), Rsquared=ld[1,], stringsAsFactors=FALSE)
 			proxies <-subset(proxies, Rsquared >= minR)
 			selected <- subset(eqtls, snps == peak)
-			selected$others <- paste(proxies$snps, collapse=",")
-			selected$Rsquared <- paste(sprintf("%.03f", proxies$Rsquared), collapse=",")
+			if(nrow(proxies) >= 1){
+				selected$others <- paste(proxies$snps, collapse=",")
+				selected$Rsquared <- paste(sprintf("%.03f", proxies$Rsquared), collapse=",")
+			} else{
+				selected$others <- NA
+				selected$Rsquared <- NA
+			}
 			ans <- rbind(ans, selected)
 		}
 		eqtls <- subset(eqtls, !snps %in% c(peak, proxies$snps))
