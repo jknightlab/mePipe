@@ -1,8 +1,8 @@
 Package: mePipe
 Type: Package
 Title: Matrix-eQTL pipeline
-Version: 1.1.7
-Date: 2013-05-07
+Version: 1.1.8
+Date: 2013-06-11
 Author: Peter Humburg
 Maintainer: Peter Humburg <humburg@well.ox.ac.uk>
 Description: Functions to support running of Matrix-eQTL analysis pipeline.
@@ -25,3 +25,4 @@ Collate:
     'runME.R'
     'ldStructure.R'
     'utils.R'
+    'plotCov.R'
