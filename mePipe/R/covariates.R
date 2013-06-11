@@ -207,29 +207,54 @@ combineSlicedData <- function(x, y){
 #' @import Rsge
 #' @export
 chooseCov <- function(expression, genotype, covariate, candidates = seq(5, 50, by = 5), 
-		covThreshold = 0.01, covOpt = getOptions(), output = "covSelect", ...){
+		covThreshold = 0.01, covOpt = getOptions(), output = "covSelect", doCis=FALSE, doTrans=FALSE,
+		...){
 	dir.create(output, showWarnings = FALSE)
 	
 	covCount <- Rsge::sge.parLapply(candidates, .submitChooseCov, covOpt = covOpt, covariate = covariate, 
 			expression = expression, genotype = genotype, output = output, 
 			covThreshold = covThreshold, ..., 
 			njobs=length(candidates))
-	covCount <- Reduce(cbind, covCount)
+	covCount <- Reduce(function(x,y) 
+				list(significant=rbind(x$significant, y$significant), total=rbind(x$total, y$total)), 
+			covCount)
 	
-	if(max(covCount[,1]) > 0){
-		bestCov <- candidates[which.max(covCount[1,])]
-	} else{
-		bestCov <- candidates[which.max(covCount[2,])]
+	bestCovIdx <- lapply(covCount, sapply, which.max)
+	bestCov <- sapply(bestCovIdx, function(i) candidates[i])
+	rownames(bestCov) <- c("all", "cis", "trans")
+	bestCount <- mapply(function(x,i) {
+				ans <- integer(length(i))
+				names(ans) <- names(x)
+				for(j in 1:length(i)){
+					ans[j] <- x[i[j], j]
+				}
+				ans
+			}, covCount, bestCovIdx)
+	## flag indicating whether the total number of associations (rather than only the significant ones)
+	## should be used
+	useTotal <- apply(bestCount, 1, function(x) x[1] == 0)
+	
+	selection <- numeric()
+	if(!doCis && !doTrans){
+		selection <- c(all=bestCov["all", useTotal[1]+1])
+	} 
+	if(doCis){
+		selection <- c(cis=bestCov["cis", useTotal[2] + 1])
+	} 
+	if(doTrans){
+		selection <- c(selection, trans=bestCov["trans", useTotal[3] + 1])
 	}
-	
-	list(covariates=candidates, eqtls=list(significant=covCount[1,], all=covCount[2,]), 
-			best=file.path(output, paste("me_", bestCov, "_covariates.eQTL", sep="")))
+		
+	best <- file.path(output, paste0("me_", selection, "_covariates.eQTL"))
+	names(best) <- names(selection)
+	if(doCis) best["cis"] <- paste(best["cis"], "cis", sep=".")
+	list(covariates=candidates, eqtls=covCount, best=best, selected=selection)
 }
 
 #' Carry out computations to choose covariates.
 #' This function is called by \code{\link{chooseCov}} to do the actual work
 #' (possibly distributed on an SGE cluster)
-#' @param candidates Numeric vector listing the numbers of covariates that should be evaluated.
+#' @param n Numeric vector listing the numbers of covariates that should be evaluated.
 #' @param covOpt List of options to use for reading of covariate data.
 #' @param covariate Character vector of file names for covariate files (see details).
 #' @param expression Name of file containing the gene expression data.
@@ -238,51 +263,53 @@ chooseCov <- function(expression, genotype, covariate, candidates = seq(5, 50, b
 #' @param ... Addition parameters for \code{\link{runME}}
 #' @param covThreshold FDR threshold to use when determining the number of significant eQTLs.
 #' @rdname submitChooseCov
+#' @keywords internal
 #' @author Peter Humburg
-.submitChooseCov <- function(candidates, covOpt, covariate, expression, genotype, output, 
+.submitChooseCov <- function(n, covOpt, covariate, expression, genotype, output, 
 		..., covThreshold) {
 	
+	covCount <- list(significant=data.frame(all=integer(), cis=integer(), trans=integer()),
+			total=data.frame(all=integer(), cis=integer(), trans=integer()))
 	selectFrom <- as.matrix(loadCovariates(covariate[1], covOpt))
-	if(any(candidates > nrow(selectFrom))){
+	if(n > nrow(selectFrom)){
 		warning("Cannot use more than ", nrow(selectFrom), " covariates.")
-		candidates <- candidates[candidates <= nrow(selectFrom)]
-		if(length(candidates) == 0){
-			stop("Invalid number of covariates selected. Please choose numbers between 0 and ", 
-					nrow(selectFrom))
-		}
+		return(covCount)
+	}
+	if(length(n) == 0){
+		stop("Invalid number of covariates selected. Please choose numbers between 0 and ", 
+				nrow(selectFrom))
 	}
 	otherCov <- SlicedData$new()
 	if(length(covariate) > 1){
 		otherCov <- loadCovariates(covariate[-1], covOpt)
 	}
-	maxCount <- 0
-	covCount <- data.frame(all=integer(), total=integer())
-	bestCov <- candidates[1]
-	for(n in candidates){
-		selectedCov <- SlicedData$new()
-		if(n > 0){
-			selectedCov <- selectedCov$CreateFromMatrix(selectFrom[1:n, , drop=FALSE])
-		}
-		if(length(covariate) > 1)
-			selectedCov <- combineSlicedData(selectedCov, otherCov)
-		me <- runME(expression, genotype, selectedCov, 
-				output=file.path(output, paste("me_", n, "_covariates.eQTL", sep="")), ...)
-		count <- 0
-		fullCount <- 0
-		if(!is.null(me$all$eqtls)){
-			count <- length(unique((subset(me$all$eqtls, FDR < covThreshold)$gene)))
-			fullCount <- length(unique((me$all$eqtls$gene)))
-		}else{
-			if(!is.null(me$trans$eqtls)){
-				count <- length(unique(subset(me$trans$eqtls, FDR < covThreshold)$gene))
-				fullCount <- length(unique((me$trans$eqtls$gene)))
-			}
-			if(!is.null(me$cis$eqtls)){
-				count <- count + length(unique((subset(me$cis$eqtls, FDR < covThreshold)$gene)))
-				fullCount <- fullCount + length(unique((me$cis$eqtls$gene)))
-			}
-		}
-		covCount <- rbind(as.integer(count), as.integer(fullCount))
+	
+	selectedCov <- SlicedData$new()
+	if(n > 0){
+		selectedCov <- selectedCov$CreateFromMatrix(selectFrom[1:n, , drop=FALSE])
 	}
+	if(length(covariate) > 1)
+		selectedCov <- combineSlicedData(selectedCov, otherCov)
+	me <- runME(expression, genotype, selectedCov,
+			output=file.path(output, paste("me_", n, "_covariates.eQTL", sep="")), ...)
+	count <- c(all=0, cis=0, trans=0)
+	fullCount <- c(all=0, cis=0, trans=0)
+	if(!is.null(me$all$eqtls)){
+		count["all"] <- length(unique((subset(me$all$eqtls, FDR < covThreshold)$gene)))
+		fullCount["all"] <- length(unique((me$all$eqtls$gene)))
+	}
+	if(!is.null(me$trans$eqtls)){
+		count["trans"] <- length(unique(subset(me$trans$eqtls, FDR < covThreshold)$gene))
+		fullCount["trans"] <- length(unique((me$trans$eqtls$gene)))
+	}
+	if(!is.null(me$cis$eqtls)){
+		count["cis"] <- length(unique((subset(me$cis$eqtls, FDR < covThreshold)$gene)))
+		fullCount["cis"] <- length(unique((me$cis$eqtls$gene)))
+	}
+	if(count["all"] == 0) count["all"] <- sum(count)
+	if(fullCount["all"] == 0) fullCount["all"] <- sum(fullCount)
+	covCount$significant <- rbind(covCount$significant, as.integer(count))
+	covCount$total <- rbind(covCount$total, as.integer(fullCount))
+	colnames(covCount$significant) <- colnames(covCount$total) <- c("all", "cis", "trans")
 	covCount
 }

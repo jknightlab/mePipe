@@ -4,12 +4,12 @@
 This function is called by \code{\link{chooseCov}} to do the actual work
 (possibly distributed on an SGE cluster)}
 \usage{
-  .submitChooseCov(candidates, covOpt, covariate,
-    expression, genotype, output, ..., covThreshold)
+  .submitChooseCov(n, covOpt, covariate, expression,
+    genotype, output, ..., covThreshold)
 }
 \arguments{
-  \item{candidates}{Numeric vector listing the numbers of
-  covariates that should be evaluated.}
+  \item{n}{Numeric vector listing the numbers of covariates
+  that should be evaluated.}
 
   \item{covOpt}{List of options to use for reading of
   covariate data.}
@@ -38,4 +38,5 @@ This function is called by \code{\link{chooseCov}} to do the actual work
 \author{
   Peter Humburg
 }
+\keyword{internal}
 

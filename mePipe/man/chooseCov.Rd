@@ -4,7 +4,8 @@
 \usage{
   chooseCov(expression, genotype, covariate,
     candidates = seq(5, 50, by = 5), covThreshold = 0.01,
-    covOpt = getOptions(), output = "covSelect", ...)
+    covOpt = getOptions(), output = "covSelect",
+    doCis = FALSE, doTrans = FALSE, ...)
 }
 \arguments{
   \item{expression}{Name of file containing the gene

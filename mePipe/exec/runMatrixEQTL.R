@@ -64,7 +64,7 @@ option_list <- list(
 		make_option(c("--stepcov"), default = 5L,
 				help = "Step size to use when evaluating different numbers of PCA covariates"),
 		make_option(c("--covthreshold"), default = 1e-3,
-				help = "FDR threshold below which associations between PCA covariates and genotypes should be considered significant. [default: %default]"),
+				help = "FDR threshold below which associations should be considered significant when choosing the optimal number of covariates. [default: %default]"),
 		make_option(c("--covout"), default = "[output]_covSelect",
 				help = "Name of output directory for covariate selection. This is interpreted relative to the output directory. [default: %default]"),
 		make_option(c("--sortedSNPs"), action="store_true", default=FALSE,
@@ -253,7 +253,6 @@ if(!opt$ldOnly) message(" R objects: ", paste(opt$output, "rdata", sep = '.'))
 message("")
 
 ## set-up environment for Rsge
-sge.setDefaultOptions()
 sge.options(sge.use.cluster=opt$cluster)
 
 if(!opt$ldOnly){
@@ -326,25 +325,39 @@ if(!opt$ldOnly){
 				snpsPos = opt$snpspos,
 				genePos = opt$genepos,
 				cis = opt$cisdist,
-				bins = opt$bins, qqplot = opt$qqplot)
-		covSelected <- if(max(selected$eqtls$significant) > 0) {
-					selected$covariates[which.max(selected$eqtls$significant)]
-				} else {
-					selected$covariates[which.max(selected$eqtls$all)]
-				}
-		message("Using ", covSelected, " covariates")
+				bins = opt$bins, qqplot = opt$qqplot, 
+				doCis = opt$cisthreshold > 0, 
+				doTrans = opt$cisthreshold > 0 && opt$pthreshold > 0)
+		
+		for(i in 1:length(selected$selected)){
+			if(names(selected$selected)[i] == "all"){
+				message("Using ", selected$selected[i], " covariates")
+			} else{
+				message("Using ", selected$selected[i], " covariates for ", 
+						names(selected$selected)[i], " analysis")
+			}
+		}
+		
 		## create plot of number of covariates vs number of eQTLs
 		pdf(file=file.path(opt$covout, "CovVsEQTL.pdf")) 
-		plot(selected$covariates, selected$eqtls$significant, type='b', xlab="Number of covariates",
-				ylab = "Number of genes with eQTLs", 
-				ylim=c(0, max(c(selected$eqtls$significant, selected$eqtls$all))))
-		lines(selected$covariates, selected$eqtls$all, type='b', col=4)
-		legend("topleft", legend=c("significant", "all"), col=c(1,4), pch=1, lty=1)
+		plotCov(selected$covariates, selected$eqtls$total[names(selected$selected)], 
+				selected$selected, main="All associations returned by Matrix-eQTL")
+		plotCov(selected$covariates, selected$eqtls$significant[names(selected$selected)], 
+				selected$selected, main=paste0("Significant associations (fdr < ", 
+						opt$covthreshold, ")"))
 		dev.off()
 		
 		## copy selected results to output
-		results <- dir(opt$covout, paste("^", basename(selected$best), sep = ''))
-		target <- gsub(basename(selected$best), basename(opt$output), results)
+		results <- lapply(selected$best, function(x) 
+					dir(opt$covout, paste0("^", sub("\\.cis$", "", basename(x)), "(\\.rdata)?$")))
+		if("cis" %in% names(results)){
+			results[["cis"]][1] <- paste(results[["cis"]][1], "cis", sep=".")
+		}
+		target <- mapply(function(x, y) 
+					gsub(basename(x), 
+							paste0(basename(opt$output)), y), sub("\\.cis$", "", selected$best), 
+				results)
+		##TODO: combine MatrixEQTL result objects for cis- and trans-analysis if different covariates were used
 		status <- file.copy(sapply(results, function(x) file.path(opt$covout, x)), 
 				sapply(target, function(x) file.path(dirname(opt$output), x)),
 				overwrite = TRUE)

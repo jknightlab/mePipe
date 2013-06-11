@@ -50,22 +50,22 @@ runME <- function(expression, genotype, covariate, error, snpsPos, genePos,
 	
 	if(!is.null(sge.getOption("sge.use.cluster")) && sge.getOption("sge.use.cluster")){
 		Rsge::sge.run(.submitRunME, error = error, expression = expression, exprOpt = exprOpt, 
-				genotype = genotype, genoOpt = genoOpt, covariate = covariate, 
+				genotype = genotype, genoOpt = genoOpt, covariate = covariate, covOpt=covOpt,
 				combineSlicedData = combineSlicedData, cis = cis, snpsPos = snpsPos, 
 				genePos = genePos, output = output, threshold = threshold, model = model, 
 				verbose = verbose, cisOutput = cisOutput, cisThreshold = cisThreshold, 
 				bins = bins, qqplot = qqplot)
 	} else{
-		.submitRunME(error = error, expression = expression, exprOpt = exprOpt, genotype = genotype, 
-				genoOpt = genoOpt, covariate = covariate, combineSlicedData = combineSlicedData, 
-				cis = cis, snpsPos = snpsPos, genePos = genePos, output = output, threshold = threshold, 
-				model = model, verbose = verbose, cisOutput = cisOutput, cisThreshold = cisThreshold, 
-				bins = bins, qqplot = qqplot)
+		.submitRunME(error=error, expression=expression, exprOpt=exprOpt, genotype=genotype, 
+				genoOpt=genoOpt, covariate=covariate, covOpt=covOpt, 
+				combineSlicedData=combineSlicedData, cis=cis, snpsPos=snpsPos, genePos=genePos, 
+				output=output, threshold=threshold, model=model, verbose=verbose, cisOutput=cisOutput, cisThreshold = cisThreshold, 
+				bins=bins, qqplot=qqplot)
 	}
 }
 
 #' @author Peter Humburg
-.submitRunME <- function(error, expression, exprOpt, genotype, genoOpt, covariate, 
+.submitRunME <- function(error, expression, exprOpt, genotype, genoOpt, covariate, covOpt,
 		combineSlicedData, cis, snpsPos, genePos, output, threshold, model, verbose, 
 		cisOutput, cisThreshold, bins, qqplot) {
 	errorCov <- numeric()
