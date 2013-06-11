@@ -13,6 +13,8 @@ getSNP <- function(data, snp){
 toSnpMatrix <- function(data, snps){
 	ans <- lapply(snps, getSNP, data=data)
 	ans <- t(Reduce(rbind, ans))
+	## only keep samples with complete information
+	ans <- ans[apply(ans,1, function(x) !any(is.na(x))),]
 	mode(ans) <- "raw"
 	new("SnpMatrix", ans)	
 }
