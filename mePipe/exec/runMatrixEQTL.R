@@ -195,13 +195,13 @@ if(opt$ldBlocks){
 		stop("SNP positions are required for LD computations.")
 	}
 	message(" eQTLs will be summarised by LD block")
-	message("  maximum number of SNPs per block: ", opt$maxSNPs)
-	message("  maximum gap between SNPs within block: ", opt$maxDist)
+	message("    maximum number of SNPs per block: ", opt$maxSNPs)
+	message("    maximum gap between SNPs within block: ", opt$maxDist)
 }
 if(opt$ldPairs){
 	message(" eQTLs will be grouped by pairwise LD with peak SNP")
-	message("  FDR threshold for reported associations: ", opt$ldFDR)
-	message("  minimum R^2 with peak SNP required: ", opt$ldR2)
+	message("    FDR threshold for reported associations: ", opt$ldFDR)
+	message("    minimum R^2 with peak SNP required: ", opt$ldR2)
 }
 
 message("\nInput files:")
@@ -236,6 +236,10 @@ if(opt$cisthreshold > 0){
 		}
 		if(opt$ldBlocks){
 			message(" SNP groups based on pairwise for trans associations: ", paste(opt$output, 
+							"LDpair", sep="_"))
+		}
+		if(opt$ldPairs){
+			message(" SNP groups based on pairwise LD for trans associations: ", paste(opt$output, 
 							"LDpair", sep="_"))
 		}
 	}
