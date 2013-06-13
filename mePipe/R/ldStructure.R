@@ -276,7 +276,6 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 				rsq <- c(rsq, as.numeric(result[[paste0(solution, "rsquared")]]))
 			}
 			proxies <- data.frame(snps=as.character(eqtls$snps[-1]), Rsquared=rsq, stringsAsFactors=FALSE)
-						
 			proxies <-subset(proxies, Rsquared >= minR)
 			selected <- eqtls[1,]
 			if(nrow(proxies) >= 1){
@@ -287,6 +286,8 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 				selected$Rsquared <- NA
 			}
 			ans <- rbind(ans, selected)
+			## clean-up
+			unlink(c(tmp, outFile))
 		}
 		eqtls <- subset(eqtls[-1,], !snps %in% proxies$snps)
 	}
