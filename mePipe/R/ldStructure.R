@@ -245,20 +245,40 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 			pvalue=numeric(), FDR=numeric(), others=character(), Rsquared=character(),
 			stringsAsFactors=FALSE)
 	while(nrow(eqtls) > 0){
-		peak <- as.character(eqtls$snps[1])
 		if(nrow(eqtls) == 1){
 			eqtls$others <- NA
 			eqtls$Rsquared <- NA
 			proxies <- data.frame(snps=character(), Rsquared=numeric(), stringsAsFactors=FALSE)
 			ans <- rbind(ans, eqtls)
 		} else {
+			## create CubeX input file for all pairs including the peak SNP
+			snpMat <- toCubeX(geno, as.character(eqtls$snps))
+			tmp <- tempfile(pattern=paste(selGene, eqtls$snps[1], sep="_"), tmpdir=".", fileext=".tmp")
+			write.table(snpMat, file=tmp, row.names=FALSE, col.names=FALSE, sep="\t", quote=FALSE)
+			
 			## get list of R-sq for between peak SNP for each gene and all other SNPs
 			## that have significant associations with that gene
-			snpMat <- toSnpMatrix(geno, as.character(eqtls$snps))
-			ld <- snpStats::ld(snpMat[,1], snpMat[,-1], stats="R.squared")
-			proxies <- data.frame(snps=colnames(ld), Rsquared=ld[1,], stringsAsFactors=FALSE)
+			outFile <- paste(tmp, "out", sep="_")
+			command <- paste("python", file.path(path.package("mePipe"), "exec", "cubex-cl.py"), tmp,
+					">", outFile)
+			system(command)
+			
+			## parse CubeX output
+			cubexOut <- XML::xmlTreeParse(outFile)
+			cubexOut <- lapply(XML::xmlChildren(cubexOut$doc$children[["dataset"]]), XML::xmlToList)
+			## extract r^2 of most likely solution (assuming HWE and random mating)
+			rsq <- numeric()
+			for(result in cubexOut){
+				chisq <- c(alpha=as.numeric(result[["alpha-chisq"]]), 
+						beta=as.numeric(result[["beta-chisq"]]), 
+						gamma=as.numeric(result[["gamma-chisq"]]))
+				solution <- names(chisq)[which.min(chisq)]
+				rsq <- c(rsq, as.numeric(result[[paste0(solution, "rsquared")]]))
+			}
+			proxies <- data.frame(snps=as.character(eqtls$snps[-1]), Rsquared=rsq, stringsAsFactors=FALSE)
+						
 			proxies <-subset(proxies, Rsquared >= minR)
-			selected <- subset(eqtls, snps == peak)
+			selected <- eqtls[1,]
 			if(nrow(proxies) >= 1){
 				selected$others <- paste(proxies$snps, collapse=",")
 				selected$Rsquared <- paste(sprintf("%.03f", proxies$Rsquared), collapse=",")
@@ -268,7 +288,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 			}
 			ans <- rbind(ans, selected)
 		}
-		eqtls <- subset(eqtls, !snps %in% c(peak, proxies$snps))
+		eqtls <- subset(eqtls[-1,], !snps %in% proxies$snps)
 	}
 	ans
 }
