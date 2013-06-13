@@ -357,10 +357,25 @@ if(!opt$ldOnly){
 					gsub(basename(x), 
 							paste0(basename(opt$output)), y), sub("\\.cis$", "", selected$best), 
 				results)
-		##TODO: combine MatrixEQTL result objects for cis- and trans-analysis if different covariates were used
+		
 		status <- file.copy(sapply(results, function(x) file.path(opt$covout, x)), 
 				sapply(target, function(x) file.path(dirname(opt$output), x)),
 				overwrite = TRUE)
+		
+		## combine MatrixEQTL result objects for cis- and trans-analysis
+		if("cis" %in% names(results) && "trans" %in% names(results)){
+			load(results$cis[2])
+			me.cis <- me
+			load(results$trans[2])
+			me$param$output_file_name.cis <- me.cis$param$output_file_name.cis
+			me$all$neqtls <- me$all$neqtls - me$cis$neqtls + me.cis$cis$neqtls
+			me$all$snps.with.eqtls <- me$all$snps.with.eqtls - me$cis$snps.with.eqtls + 
+					me.cis$cis$snps.with.eqtls
+			me$all$gene.with.eqtls <- me$all$gene.with.eqtls - me$cis$gene.with.eqtls + 
+					me.cis$cis$gene.with.eqtls
+			me$cis <- me.cis$cis
+			save(me, file=paste(opt$output, "rdata", sep="."))
+		}
 		
 	} else{
 		## or just run a single analysis with pre-specified covariates
