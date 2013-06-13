@@ -1,7 +1,7 @@
 Package: mePipe
 Type: Package
 Title: Matrix-eQTL pipeline
-Version: 1.1.8
+Version: 1.2.0
 Date: 2013-06-11
 Author: Peter Humburg
 Maintainer: Peter Humburg <humburg@well.ox.ac.uk>
@@ -14,7 +14,7 @@ Depends:
 Imports:
     MatrixEQTL,
     trio,
-    snpStats
+    XML
 Suggests:
     optparse
 Collate:
