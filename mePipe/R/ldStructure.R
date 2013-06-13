@@ -232,13 +232,18 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 		## get list of R-sq for between peak SNP for each gene and all other SNPs
 		## that have significant associations with that gene
 		genes <- unique(as.character(eqtls$gene))
+		pb <- txtProgressBar(min=0, max=length(genes), initial=NA, file=stderr(), style=3)
 		ans <- sge.parLapply(genes, .submitLDpairs, eqtls=eqtls, geno=geno, minR=minR, 
-				genoOpt=genoOpt, njobs=length(genes))
+				genoOpt=genoOpt, progressBar=pb, njobs=length(genes))
+		close(pb)
 	}
 	Reduce(rbind, ans)
 }
 
-.submitLDpairs <- function(selGene, eqtls, geno, minR, genoOpt){
+.submitLDpairs <- function(selGene, eqtls, geno, minR, genoOpt, progressBar){
+	if(!sge.getOption("sge.use.cluster") && is.na(getTxtProgressBar(progressBar))){
+		setTxtProgressBar(progressBar, 0)
+	}
 	eqtls <- subset(eqtls, gene == selGene)
 	eqtls <- eqtls[order(eqtls$pvalue),]
 	ans <- data.frame(snps=character(), gene=character(), statistic=numeric(), 
@@ -268,15 +273,22 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 			cubexOut <- lapply(XML::xmlChildren(cubexOut$doc$children[["dataset"]]), XML::xmlToList)
 			## extract r^2 of most likely solution (assuming HWE and random mating)
 			rsq <- numeric()
-			for(result in cubexOut){
+			for(i in 1:length(cubexOut)){
+				result <- cubexOut[[i]]
 				chisq <- c(alpha=as.numeric(result[["alpha-chisq"]]), 
 						beta=as.numeric(result[["beta-chisq"]]), 
 						gamma=as.numeric(result[["gamma-chisq"]]))
 				solution <- names(chisq)[which.min(chisq)]
-				rsq <- c(rsq, as.numeric(result[[paste0(solution, "rsquared")]]))
+				thisR <- as.numeric(result[[paste0(solution, "rsquared")]])
+				if(is.null(solution)){
+					rsq <- c(rsq, NA)
+					warning("No solution found for SNP pair ", eqtls$snps[1], ", ", eqtls$snps[i+1])
+				} else {
+					rsq <- c(rsq, thisR)
+				}
 			}
 			proxies <- data.frame(snps=as.character(eqtls$snps[-1]), Rsquared=rsq, stringsAsFactors=FALSE)
-			proxies <-subset(proxies, Rsquared >= minR)
+			proxies <-subset(proxies, !is.na(Rsquared) & Rsquared >= minR)
 			selected <- eqtls[1,]
 			if(nrow(proxies) >= 1){
 				selected$others <- paste(proxies$snps, collapse=",")
@@ -290,6 +302,9 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 			unlink(c(tmp, outFile))
 		}
 		eqtls <- subset(eqtls[-1,], !snps %in% proxies$snps)
+	}
+	if(!sge.getOption("sge.use.cluster")){
+		setTxtProgressBar(progressBar, getTxtProgressBar(progressBar) + 1)
 	}
 	ans
 }
