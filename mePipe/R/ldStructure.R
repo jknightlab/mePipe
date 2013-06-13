@@ -264,8 +264,8 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 			## get list of R-sq for between peak SNP for each gene and all other SNPs
 			## that have significant associations with that gene
 			outFile <- paste(tmp, "out", sep="_")
-			command <- paste("python", file.path(path.package("mePipe"), "exec", "cubex-cl.py"), tmp,
-					">", outFile)
+			command <- paste("python", system.file(file.path("exec", "cubex-cl.py"), package="mePipe"), 
+					tmp, ">", outFile)
 			system(command)
 			
 			## parse CubeX output
