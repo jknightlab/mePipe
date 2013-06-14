@@ -257,7 +257,7 @@ if(!opt$ldOnly) message(" R objects: ", paste(opt$output, "rdata", sep = '.'))
 message("")
 
 ## set-up environment for Rsge
-sge.options(sge.use.cluster=opt$cluster)
+sge.options(sge.use.cluster=opt$cluster, sge.user.options="-S /bin/bash -V", sge.trace=opt$verbose)
 
 if(!opt$ldOnly){
 	if(opt$selectcov){
