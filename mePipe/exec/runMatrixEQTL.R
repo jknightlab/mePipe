@@ -79,7 +79,7 @@ option_list <- list(
 				help="Maximum number of SNPs to consider for each LD block. [default: %default]"),
 		make_option(c("--ldFDR"), default=0.05,
 				help="Maximum FDR of eQTLs to be included in list of SNPs for each block. Only blocks with at least one SNP significant at this level will be reported. [default: %default]"),
-		make_option(c("--ldR2"), default=0.85,
+		make_option(c("--ldR2"), default=0.8,
 				help="Minimum R^2 between two eSNPs for them to be considered part of the same signal by `ldPairs`. [default: %default]"),
 		make_option(c("--ldOnly"), action="store_true", default=FALSE,
 				help="Compute LD blocks for existing eQTL results. This assumes that previous results can be loaded from the file implied by '--output'. Implies '--ldBlocks'"),

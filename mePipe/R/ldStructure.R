@@ -203,7 +203,7 @@ ldBlock <- function(snp, geno, pos, dist=500, window=200, ...){
 #' significant p-values but are considered to be proxies of the peak SNP and their R^2. 
 #' @author Peter Humburg
 #' @export
-getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptions()){
+getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.8, genoOpt=getOptions()){
 	## check inputs
 	if(!is(eqtls, "data.frame")){
 		stop("Argument ", sQuote("eqtls"), " has to be a ", dQuote("data.frame"))
