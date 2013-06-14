@@ -8,17 +8,6 @@ getSNP <- function(data, snp){
 	ans
 }
 
-#' Extract named SNPs from SlicedData object and return them as aSnpMatrix
-#' @importClassesFrom snpStats
-toSnpMatrix <- function(data, snps){
-	ans <- lapply(snps, getSNP, data=data)
-	ans <- t(Reduce(rbind, ans))
-	## only keep samples with complete information
-	ans <- ans[apply(ans,1, function(x) !any(is.na(x))),]
-	mode(ans) <- "raw"
-	new("SnpMatrix", ans)	
-}
-
 #' Extract named SNPs from SlicedData object and return them in the format
 #' expected by CubeX
 #' @author Peter Humburg
