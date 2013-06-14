@@ -234,7 +234,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.85, genoOpt=getOptio
 		genes <- unique(as.character(eqtls$gene))
 		pb <- txtProgressBar(min=0, max=length(genes), initial=NA, file=stderr(), style=3)
 		ans <- sge.parLapply(genes, .submitLDpairs, eqtls=eqtls, geno=geno, minR=minR, 
-				genoOpt=genoOpt, progressBar=pb, njobs=length(genes))
+				genoOpt=genoOpt, progressBar=pb, njobs=length(genes), packages=c("MatrixEQTL"))
 		close(pb)
 	}
 	Reduce(rbind, ans)
