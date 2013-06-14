@@ -190,6 +190,8 @@ combineSlicedData <- function(x, y){
 #' @param covThreshold FDR threshold to use when determining the number of significant eQTLs.
 #' @param covOpt List of options to use for reading of covariate data. 
 #' @param output Name of output directory
+#' @param doCis Logical indicating whether covariates should be selected based on cis-associations.
+#' @param doTrans Logical indicating whether covariates should be selected based on trans-associations.
 #' @param ... Addition parameters for \code{\link{runME}}
 #' @return A list with elements
 #' \item{covariates}{Numeric vector with the number of covariates used in each iteration.}

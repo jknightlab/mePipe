@@ -28,6 +28,12 @@
 
   \item{output}{Name of output directory}
 
+  \item{doCis}{Logical indicating whether covariates should
+  be selected based on cis-associations.}
+
+  \item{doTrans}{Logical indicating whether covariates
+  should be selected based on trans-associations.}
+
   \item{...}{Addition parameters for \code{\link{runME}}}
 }
 \value{

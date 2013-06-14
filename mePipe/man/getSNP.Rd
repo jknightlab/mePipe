@@ -7,4 +7,8 @@
 \description{
   Get data for a named SNP from SlicedData object
 }
+\author{
+  Peter Humburg
+}
+\keyword{internal}
 

@@ -3,7 +3,7 @@
 \title{Identify all SNPs in LD with peak SNP
 The resulting list of eSNPs for the same gene may be considered independent signals.}
 \usage{
-  getLDpairs(eqtls, genotype, minFDR = 0.05, minR = 0.85,
+  getLDpairs(eqtls, genotype, minFDR = 0.05, minR = 0.8,
     genoOpt = getOptions())
 }
 \arguments{

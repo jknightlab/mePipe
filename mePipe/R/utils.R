@@ -1,4 +1,6 @@
 #' Get data for a named SNP from SlicedData object
+#' @author Peter Humburg
+#' @keywords internal
 getSNP <- function(data, snp){
 	loc <- data$FindRow(snp)
 	ans <- NULL
