@@ -16,6 +16,11 @@ getSNP <- function(data, snp){
 #' @keywords internal
 toCubeX <- function(data, snps){
 	mat <- lapply(snps, getSNP, data=data)
+	missing <- sapply(mat, is.null) 
+	if(any(missing)){
+		warning("No data found for ", paste(snps[which(missing)], collapse=", "), 
+				" in genotyping file")
+	}
 	mat <- Reduce(rbind, mat)
 	t(apply(mat[-1, , drop=FALSE], 1, function(x, y){
 				c(

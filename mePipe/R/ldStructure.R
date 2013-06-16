@@ -193,17 +193,22 @@ ldBlock <- function(snp, geno, pos, dist=500, window=200, ...){
 #' @param genotype A \code{SlicedData} object with genotypes.
 #' @param minFDR FDR threshold to use when filtering associations. Only SNPs with an FDR below 
 #' this threshold will be considered.
-#' @param minR Minimum R-squared required between two eSNPs for them to be considered in LD.
+#' @param maxP Maximum p-value for correlation between to eSNPs that should still be considered to be
+#' in significant LD. 
 #' @param genoOpt List of options for reading of genotype data.
 #' @note Unlike the raw Matrix-eQTL output all associations with an FDR below the threshold indicated
 #' by \code{minFDR} will be absent from the output produced by this function.
-#' @return A \code{data.frame} containing all significant peak SNPs that are not in (high)
+#' @return A list with components
+#' \describe{
+#' \item{groups}{A \code{data.frame} containing all significant peak SNPs that are not in (high)
 #' LD with more significant SNPs. Columns are the same as in Matrix-eQTL output plus two additional
 #' columns (\code{others} and \code{Rsquared}) with comma separated list of SNPs that had 
-#' significant p-values but are considered to be proxies of the peak SNP and their R^2. 
+#' significant p-values but are considered to be proxies of the peak SNP and their R^2.}
+#' \item{proxies}{A \code{data.frame} containing the results of all proxy SNP computations}
+#' } 
 #' @author Peter Humburg
 #' @export
-getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.8, genoOpt=getOptions()){
+getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=0.01, genoOpt=getOptions()){
 	## check inputs
 	if(!is(eqtls, "data.frame")){
 		stop("Argument ", sQuote("eqtls"), " has to be a ", dQuote("data.frame"))
@@ -216,8 +221,11 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.8, genoOpt=getOption
 	}
 	
 	eqtls <- subset(eqtls, FDR <= minFDR)
-	ans <- data.frame(snps=character(), gene=character(), statistic=numeric(), 
+	ans <- list()
+	ans$groups <- data.frame(snps=character(), gene=character(), statistic=numeric(), 
 			pvalue=numeric(), FDR=numeric(), others=character(), Rsquared=character())
+	ans$proxies <- data.frame(snp1=character(), snp2=character(), Rsquared=numeric(), 
+			pvalue=numeric(), stringsAsFactors=FALSE)
 
 	if(nrow(eqtls) > 0){
 		## load genotypes
@@ -233,22 +241,26 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.8, genoOpt=getOption
 		## that have significant associations with that gene
 		genes <- unique(as.character(eqtls$gene))
 		pb <- txtProgressBar(min=0, max=length(genes), initial=NA, file=stderr(), style=3)
-		ans <- sge.parLapply(genes, .submitLDpairs, eqtls=eqtls, geno=geno, minR=minR, 
+		ans <- sge.parLapply(genes, .submitLDpairs, eqtls=eqtls, geno=geno, maxP=maxP, 
 				genoOpt=genoOpt, progressBar=pb, njobs=length(genes), packages=c("MatrixEQTL"))
 		close(pb)
 	}
-	Reduce(rbind, ans)
+	ans$groups <- Reduce(rbind, lapply(ans, "[[", "groups"))
+	ans$proxies <- Reduce(rbind, lapply(ans, "[[", "proxies"))
 }
 
-.submitLDpairs <- function(selGene, eqtls, geno, minR, genoOpt, progressBar){
+.submitLDpairs <- function(selGene, eqtls, geno, maxP, genoOpt, progressBar){
 	if(!sge.getOption("sge.use.cluster") && is.na(getTxtProgressBar(progressBar))){
 		setTxtProgressBar(progressBar, 0)
 	}
 	eqtls <- subset(eqtls, gene == selGene)
 	eqtls <- eqtls[order(eqtls$pvalue),]
-	ans <- data.frame(snps=character(), gene=character(), statistic=numeric(), 
+	ans <- list()
+	ans$groups <- data.frame(snps=character(), gene=character(), statistic=numeric(), 
 			pvalue=numeric(), FDR=numeric(), others=character(), Rsquared=character(),
 			stringsAsFactors=FALSE)
+	ans$proxies <- data.frame(snp1=character(), snp2=character(), Rsquared=numeric(), 
+			pvalue=numeric(), stringsAsFactors=FALSE)
 	while(nrow(eqtls) > 0){
 		if(nrow(eqtls) == 1){
 			eqtls$others <- NA
@@ -260,8 +272,9 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.8, genoOpt=getOption
 			snpMat <- toCubeX(geno, as.character(eqtls$snps))
 			tmp <- tempfile(pattern=paste(selGene, eqtls$snps[1], sep="_"), tmpdir=".", fileext=".tmp")
 			write.table(snpMat, file=tmp, row.names=FALSE, col.names=FALSE, sep="\t", quote=FALSE)
+			eqtls <- subset(eqtls, snps %in% rownames(snpMat))
 			
-			## get list of R-sq for between peak SNP for each gene and all other SNPs
+			## get list of R-sq between peak SNP and all other SNPs
 			## that have significant associations with that gene
 			outFile <- paste(tmp, "out", sep="_")
 			command <- paste("python", system.file(file.path("exec", "cubex-cl.py"), package="mePipe"), 
@@ -287,21 +300,27 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, minR=0.8, genoOpt=getOption
 					rsq <- c(rsq, thisR)
 				}
 			}
-			proxies <- data.frame(snps=as.character(eqtls$snps[-1]), Rsquared=rsq, stringsAsFactors=FALSE)
-			proxies <-subset(proxies, !is.na(Rsquared) & Rsquared >= minR)
+			pval <- pchisq(rsq*2*sapply(result, '[[', 'n'), df=1, lower.tail=FALSE)
 			selected <- eqtls[1,]
-			if(nrow(proxies) >= 1){
-				selected$others <- paste(proxies$snps, collapse=",")
-				selected$Rsquared <- paste(sprintf("%.03f", proxies$Rsquared), collapse=",")
+			proxies <- data.frame(snp1=as.character(selected$snps), 
+					snp2=as.character(eqtls$snps[-1]), 
+					Rsquared=rsq, pval=pval, stringsAsFactors=FALSE)
+			selectedProxies <-subset(proxies, !is.na(pval) & pval <= maxP)
+			
+			
+			if(nrow(selectedProxies) >= 1){
+				selected$others <- paste(selectedProxies$snp2, collapse=",")
+				selected$Rsquared <- paste(sprintf("%.03f", selectedProxies$Rsquared), collapse=",")
 			} else{
 				selected$others <- NA
 				selected$Rsquared <- NA
 			}
-			ans <- rbind(ans, selected)
+			ans$groups <- rbind(ans$groups, selected)
+			ans$proxies <- rbind(ans$proxies, proxies)
 			## clean-up
 			unlink(c(tmp, outFile))
 		}
-		eqtls <- subset(eqtls[-1,], !snps %in% proxies$snps)
+		eqtls <- subset(eqtls[-1,], !snps %in% proxies$snp2)
 	}
 	if(!sge.getOption("sge.use.cluster")){
 		setTxtProgressBar(progressBar, getTxtProgressBar(progressBar) + 1)

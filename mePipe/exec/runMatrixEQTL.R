@@ -79,8 +79,8 @@ option_list <- list(
 				help="Maximum number of SNPs to consider for each LD block. [default: %default]"),
 		make_option(c("--ldFDR"), default=0.05,
 				help="Maximum FDR of eQTLs to be included in list of SNPs for each block. Only blocks with at least one SNP significant at this level will be reported. [default: %default]"),
-		make_option(c("--ldR2"), default=0.8,
-				help="Minimum R^2 between two eSNPs for them to be considered part of the same signal by `ldPairs`. [default: %default]"),
+		make_option(c("--ldR2pval"), default=0.01,
+				help="Maximum p-value for correlation between two eSNPs for that should be considered part of the same signal by `ldPairs`. [default: %default]"),
 		make_option(c("--ldOnly"), action="store_true", default=FALSE,
 				help="Compute LD blocks for existing eQTL results. This assumes that previous results can be loaded from the file implied by '--output'. Implies '--ldBlocks'"),
 		make_option(c("-d", "--delim"), default = '\t',
@@ -201,7 +201,7 @@ if(opt$ldBlocks){
 if(opt$ldPairs){
 	message(" eQTLs will be grouped by pairwise LD with peak SNP")
 	message("    FDR threshold for reported associations: ", opt$ldFDR)
-	message("    minimum R^2 with peak SNP required: ", opt$ldR2)
+	message("    p-value threshold for correlations between SNPs: ", opt$ldR2pval)
 }
 
 message("\nInput files:")
@@ -228,6 +228,7 @@ if(opt$cisthreshold > 0){
 	if(opt$ldPairs){
 		message(" SNP groups based on pairwise LD for cis associations: ", paste(opt$cisoutput, 
 						"LDpair", sep="_"))
+		message(" R^2 for all tested SNP pairs: ", paste(opt$cisoutput, "LDtable", sep="_"))
 	}
 	if(opt$pthreshold > 0){
 		if(!opt$ldOnly) message(" Trans associations: ", opt$output)
@@ -241,6 +242,7 @@ if(opt$cisthreshold > 0){
 		if(opt$ldPairs){
 			message(" SNP groups based on pairwise LD for trans associations: ", paste(opt$output, 
 							"LDpair", sep="_"))
+			message(" R^2 for all tested SNP pairs: ", paste(opt$output, "LDtable", sep="_"))
 		}
 	}
 } else{
@@ -251,6 +253,7 @@ if(opt$cisthreshold > 0){
 	if(opt$ldPair){
 		message(" SNP groups based on pairwise LD for all associations: ", 
 				paste(opt$output, "LDpair", sep="_"))
+		message(" R^2 for all tested SNP pairs: ", paste(opt$output, "LDtable", sep="_"))
 	}
 }
 if(!opt$ldOnly) message(" R objects: ", paste(opt$output, "rdata", sep = '.'))
@@ -395,26 +398,32 @@ if(opt$ldPairs){
 	
 	if(!is.null(me$all) && !is.null(me$all$eqtls)){
 		message("Computing pairwise LD ...")
-		groups <- getLDpairs(me$all$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2,
+		ans <- getLDpairs(me$all$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldR2pval,
 				genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
 						rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
-		write.table(groups, file=paste(opt$output, "LDpair", sep="_"), 
+		write.table(ans$groups, file=paste(opt$output, "LDpair", sep="_"), 
+				quote=FALSE, row.names=FALSE, sep="\t")
+		write.table(ans$proxies, file=paste(opt$output, "LDtable", sep="_"), 
 				quote=FALSE, row.names=FALSE, sep="\t")
 	} else{
 		if(!is.null(me$cis) && !is.null(me$cis$eqtls)){
 			message("Computing pairwise LD for cis associations...")
-			groups <- getLDpairs(me$cis$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2,
+			ans <- getLDpairs(me$cis$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2,
 					genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
 							rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
-			write.table(groups, file=paste(opt$cisoutput, "LDpair", sep="_"), 
+			write.table(ans$groups, file=paste(opt$cisoutput, "LDpair", sep="_"), 
+					quote=FALSE, row.names=FALSE, sep="\t")
+			write.table(ans$proxies, file=paste(opt$cisoutput, "LDtable", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
 		if(!is.null(me$trans) && !is.null(me$trans$eqtls)){
 			message("Computing pairwise LD for trans associations...")
-			groups <- getLDpairs(me$trans$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2,
+			ans <- getLDpairs(me$trans$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2,
 					genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
 							rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
-			write.table(groups, file=paste(opt$output, "LDpair", sep="_"), 
+			write.table(ans$groups, file=paste(opt$output, "LDpair", sep="_"), 
+					quote=FALSE, row.names=FALSE, sep="\t")
+			write.table(ans$proxies, file=paste(opt$output, "LDtable", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
 	}
