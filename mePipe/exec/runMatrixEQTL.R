@@ -408,7 +408,7 @@ if(opt$ldPairs){
 	} else{
 		if(!is.null(me$cis) && !is.null(me$cis$eqtls)){
 			message("Computing pairwise LD for cis associations...")
-			ans <- getLDpairs(me$cis$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2,
+			ans <- getLDpairs(me$cis$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldR2pval,
 					genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
 							rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
 			write.table(ans$groups, file=paste(opt$cisoutput, "LDpair", sep="_"), 
@@ -418,7 +418,7 @@ if(opt$ldPairs){
 		}
 		if(!is.null(me$trans) && !is.null(me$trans$eqtls)){
 			message("Computing pairwise LD for trans associations...")
-			ans <- getLDpairs(me$trans$eqtls, arguments$args[2], minFDR=opt$ldFDR, minR=opt$ldR2,
+			ans <- getLDpairs(me$trans$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldR2pval,
 					genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
 							rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
 			write.table(ans$groups, file=paste(opt$output, "LDpair", sep="_"), 
