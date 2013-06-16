@@ -247,6 +247,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=0.01, genoOpt=getOptio
 	}
 	ans$groups <- Reduce(rbind, lapply(ans, "[[", "groups"))
 	ans$proxies <- Reduce(rbind, lapply(ans, "[[", "proxies"))
+	ans
 }
 
 .submitLDpairs <- function(selGene, eqtls, geno, maxP, genoOpt, progressBar){
@@ -262,17 +263,21 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=0.01, genoOpt=getOptio
 	ans$proxies <- data.frame(snp1=character(), snp2=character(), Rsquared=numeric(), 
 			pvalue=numeric(), stringsAsFactors=FALSE)
 	while(nrow(eqtls) > 0){
+		## create CubeX input file for all pairs including the peak SNP
+		snpMat <- toCubeX(geno, as.character(eqtls$snps))
+		eqtls <- subset(eqtls, snps %in% c(as.character(eqtls$snps[1]), rownames(snpMat)))
+		proxies <- data.frame(snp1=character(), snp2=character(), Rsquared=numeric(), 
+				pvalue=numeric(), stringsAsFactors=FALSE)
+		
 		if(nrow(eqtls) == 1){
 			eqtls$others <- NA
 			eqtls$Rsquared <- NA
-			proxies <- data.frame(snps=character(), Rsquared=numeric(), stringsAsFactors=FALSE)
-			ans <- rbind(ans, eqtls)
-		} else {
-			## create CubeX input file for all pairs including the peak SNP
-			snpMat <- toCubeX(geno, as.character(eqtls$snps))
-			tmp <- tempfile(pattern=paste(selGene, eqtls$snps[1], sep="_"), tmpdir=".", fileext=".tmp")
+			ans$groups <- rbind(ans$groups, eqtls)
+			ans$proxies <- rbind(ans$proxies, proxies)
+		} else if(nrow(eqtls) > 1){
+			tmp <- tempfile(pattern=paste(selGene, eqtls$snps[1], "", sep="_"), 
+					tmpdir=".", fileext=".tmp")
 			write.table(snpMat, file=tmp, row.names=FALSE, col.names=FALSE, sep="\t", quote=FALSE)
-			eqtls <- subset(eqtls, snps %in% rownames(snpMat))
 			
 			## get list of R-sq between peak SNP and all other SNPs
 			## that have significant associations with that gene
@@ -300,11 +305,11 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=0.01, genoOpt=getOptio
 					rsq <- c(rsq, thisR)
 				}
 			}
-			pval <- pchisq(rsq*2*sapply(result, '[[', 'n'), df=1, lower.tail=FALSE)
+			pval <- pchisq(rsq*2*as.numeric(sapply(cubexOut, '[[', 'n')), df=1, lower.tail=FALSE)
 			selected <- eqtls[1,]
 			proxies <- data.frame(snp1=as.character(selected$snps), 
-					snp2=as.character(eqtls$snps[-1]), 
-					Rsquared=rsq, pval=pval, stringsAsFactors=FALSE)
+					snp2=as.character(eqtls$snps[-1]), Rsquared=rsq, pval=pval, 
+					stringsAsFactors=FALSE)
 			selectedProxies <-subset(proxies, !is.na(pval) & pval <= maxP)
 			
 			
