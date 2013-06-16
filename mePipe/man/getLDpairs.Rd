@@ -3,7 +3,7 @@
 \title{Identify all SNPs in LD with peak SNP
 The resulting list of eSNPs for the same gene may be considered independent signals.}
 \usage{
-  getLDpairs(eqtls, genotype, minFDR = 0.05, minR = 0.8,
+  getLDpairs(eqtls, genotype, minFDR = 0.05, maxP = 0.01,
     genoOpt = getOptions())
 }
 \arguments{
@@ -17,20 +17,23 @@ The resulting list of eSNPs for the same gene may be considered independent sign
   associations. Only SNPs with an FDR below this threshold
   will be considered.}
 
-  \item{minR}{Minimum R-squared required between two eSNPs
-  for them to be considered in LD.}
+  \item{maxP}{Maximum p-value for correlation between to
+  eSNPs that should still be considered to be in
+  significant LD.}
 
   \item{genoOpt}{List of options for reading of genotype
   data.}
 }
 \value{
-  A \code{data.frame} containing all significant peak SNPs
+  A list with components \describe{ \item{groups}{A
+  \code{data.frame} containing all significant peak SNPs
   that are not in (high) LD with more significant SNPs.
   Columns are the same as in Matrix-eQTL output plus two
   additional columns (\code{others} and \code{Rsquared})
   with comma separated list of SNPs that had significant
   p-values but are considered to be proxies of the peak SNP
-  and their R^2.
+  and their R^2.} \item{proxies}{A \code{data.frame}
+  containing the results of all proxy SNP computations} }
 }
 \description{
   Identify all SNPs in LD with peak SNP The resulting list
