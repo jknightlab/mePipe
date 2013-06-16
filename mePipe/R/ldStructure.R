@@ -224,8 +224,8 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=0.01, genoOpt=getOptio
 	ans <- list()
 	ans$groups <- data.frame(snps=character(), gene=character(), statistic=numeric(), 
 			pvalue=numeric(), FDR=numeric(), others=character(), Rsquared=character())
-	ans$proxies <- data.frame(snp1=character(), snp2=character(), Rsquared=numeric(), 
-			pvalue=numeric(), stringsAsFactors=FALSE)
+	ans$proxies <- data.frame(snp1=character(), snp2=character(), 
+			Rsquared=numeric(), pvalue=numeric(), stringsAsFactors=FALSE)
 
 	if(nrow(eqtls) > 0){
 		## load genotypes
@@ -247,6 +247,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=0.01, genoOpt=getOptio
 	}
 	ans$groups <- Reduce(rbind, lapply(ans, "[[", "groups"))
 	ans$proxies <- Reduce(rbind, lapply(ans, "[[", "proxies"))
+	ans$proxies <- subset(ans$proxies, !duplicated(ans$proxies[,1:2]))
 	ans
 }
 
