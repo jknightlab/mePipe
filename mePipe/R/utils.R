@@ -22,17 +22,21 @@ toCubeX <- function(data, snps){
 				" in genotyping file")
 	}
 	mat <- Reduce(rbind, mat)
-	t(apply(mat[-1, , drop=FALSE], 1, function(x, y){
-				c(
-						sum(x==0 & y==0, na.rm=TRUE), 
-						sum(x==0 & y==1, na.rm=TRUE),
-						sum(x==0 & y==2, na.rm=TRUE),
-						sum(x==1 & y==0, na.rm=TRUE),
-						sum(x==1 & y==1, na.rm=TRUE),
-						sum(x==1 & y==2, na.rm=TRUE),
-						sum(x==2 & y==0, na.rm=TRUE),
-						sum(x==2 & y==1, na.rm=TRUE),
-						sum(x==2 & y==2, na.rm=TRUE)
-				)
-			}, mat[1, , drop=FALSE]))
+	ans <- matrix(nrow=0, ncol=9)
+	if(nrow(mat) > 1){
+		ans <- t(apply(mat[-1, , drop=FALSE], 1, function(x, y){
+							c(
+									sum(x==0 & y==0, na.rm=TRUE), 
+									sum(x==0 & y==1, na.rm=TRUE),
+									sum(x==0 & y==2, na.rm=TRUE),
+									sum(x==1 & y==0, na.rm=TRUE),
+									sum(x==1 & y==1, na.rm=TRUE),
+									sum(x==1 & y==2, na.rm=TRUE),
+									sum(x==2 & y==0, na.rm=TRUE),
+									sum(x==2 & y==1, na.rm=TRUE),
+									sum(x==2 & y==2, na.rm=TRUE)
+							)
+						}, mat[1, , drop=FALSE]))
+	}
+	ans
 }
