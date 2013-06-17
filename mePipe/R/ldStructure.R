@@ -268,8 +268,8 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=0.01, genoOpt=getOptio
 		## create CubeX input file for all pairs including the peak SNP
 		snpMat <- toCubeX(geno, as.character(eqtls$snps))
 		eqtls <- subset(eqtls, snps %in% c(as.character(eqtls$snps[1]), rownames(snpMat)))
-		proxies <- data.frame(snp1=character(), snp2=character(), Rsquared=numeric(), 
-				pvalue=numeric(), stringsAsFactors=FALSE)
+		proxies <- selectedProxies <- data.frame(snp1=character(), snp2=character(), 
+				Rsquared=numeric(),	pvalue=numeric(), stringsAsFactors=FALSE)
 		
 		if(nrow(eqtls) == 1){
 			eqtls$others <- NA
@@ -327,7 +327,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=0.01, genoOpt=getOptio
 			## clean-up
 			unlink(c(tmp, outFile))
 		}
-		eqtls <- subset(eqtls[-1,], !snps %in% proxies$snp2)
+		eqtls <- subset(eqtls[-1,], !snps %in% selectedProxies$snp2)
 	}
 	if(!sge.getOption("sge.use.cluster")){
 		setTxtProgressBar(progressBar, getTxtProgressBar(progressBar) + 1)
