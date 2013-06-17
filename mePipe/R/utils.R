@@ -23,7 +23,7 @@ toCubeX <- function(data, snps){
 	}
 	mat <- Reduce(rbind, mat)
 	ans <- matrix(nrow=0, ncol=9)
-	if(nrow(mat) > 1){
+	if(length(mat) > 0 && nrow(mat) > 1){
 		ans <- t(apply(mat[-1, , drop=FALSE], 1, function(x, y){
 							c(
 									sum(x==0 & y==0, na.rm=TRUE), 
