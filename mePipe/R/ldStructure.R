@@ -195,6 +195,7 @@ ldBlock <- function(snp, geno, pos, dist=500, window=200, ...){
 #' this threshold will be considered.
 #' @param maxP Maximum p-value for correlation between to eSNPs that should still be considered to be
 #' in significant LD. 
+#' @param minR Minimum R-squared at which two eSNPs will be assumed to have no independent effect. 
 #' @param genoOpt List of options for reading of genotype data.
 #' @note Unlike the raw Matrix-eQTL output all associations with an FDR below the threshold indicated
 #' by \code{minFDR} will be absent from the output produced by this function.
@@ -208,7 +209,7 @@ ldBlock <- function(snp, geno, pos, dist=500, window=200, ...){
 #' } 
 #' @author Peter Humburg
 #' @export
-getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=0.01, genoOpt=getOptions()){
+getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOpt=getOptions()){
 	## check inputs
 	if(!is(eqtls, "data.frame")){
 		stop("Argument ", sQuote("eqtls"), " has to be a ", dQuote("data.frame"))
@@ -242,7 +243,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=0.01, genoOpt=getOptio
 		genes <- unique(as.character(eqtls$gene))
 		pb <- txtProgressBar(min=0, max=length(genes), initial=NA, file=stderr(), style=3)
 		ans <- sge.parLapply(genes, .submitLDpairs, eqtls=eqtls, geno=geno, maxP=maxP, 
-				genoOpt=genoOpt, progressBar=pb, njobs=length(genes), 
+				minR=minR, genoOpt=genoOpt, progressBar=pb, njobs=length(genes), 
 				packages=c("methods","MatrixEQTL"))
 		close(pb)
 	}
@@ -252,7 +253,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=0.01, genoOpt=getOptio
 	ans
 }
 
-.submitLDpairs <- function(selGene, eqtls, geno, maxP, genoOpt, progressBar){
+.submitLDpairs <- function(selGene, eqtls, geno, maxP, minR, genoOpt, progressBar){
 	if(!sge.getOption("sge.use.cluster") && is.na(getTxtProgressBar(progressBar))){
 		setTxtProgressBar(progressBar, 0)
 	}
@@ -307,14 +308,19 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=0.01, genoOpt=getOptio
 					rsq <- c(rsq, thisR)
 				}
 			}
-			pval <- pchisq(rsq*2*as.numeric(sapply(cubexOut, '[[', 'n')), df=1, lower.tail=FALSE)
 			selected <- eqtls[1,]
 			proxies <- data.frame(snp1=as.character(selected$snps), 
-					snp2=as.character(eqtls$snps[-1]), Rsquared=rsq, pval=pval, 
+					snp2=as.character(eqtls$snps[-1]), Rsquared=rsq, pval=NA, 
 					stringsAsFactors=FALSE)
-			selectedProxies <-subset(proxies, !is.na(pval) & pval <= maxP)
-			
-			
+			selectedProxies <- NULL
+			if(!is.null(maxP)){
+				proxies$pval <- pchisq(rsq*2*as.numeric(sapply(cubexOut, '[[', 'n')), 
+						df=1, lower.tail=FALSE)
+				selectedProxies <-subset(proxies, !is.na(pval) & pval <= maxP)
+			} else{
+				selectedProxies <- subset(proxies, !is.na(Rsquared) & Rsquared < minR)
+			}
+						
 			if(nrow(selectedProxies) >= 1){
 				selected$others <- paste(selectedProxies$snp2, collapse=",")
 				selected$Rsquared <- paste(sprintf("%.03f", selectedProxies$Rsquared), collapse=",")
