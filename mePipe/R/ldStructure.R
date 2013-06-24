@@ -230,20 +230,18 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 
 	if(nrow(eqtls) > 0){
 		## load genotypes
-		geno <- SlicedData$new()
-		geno$fileDelimiter <- genoOpt$sep
-		geno$fileOmitCharacters <- genoOpt$missing
-		geno$fileSkipRows <- genoOpt$rowskip
-		geno$fileSkipColumns <- genoOpt$colskip
-		geno$fileSliceSize <- genoOpt$slice 
-		geno$LoadFile(genotype)
+		if(is(genotype, "SlicedData")){
+			geno <- genotype
+		} else{
+			geno <- loadData(genotype, genoOpt)
+		}
 		
 		## get list of R-sq for between peak SNP for each gene and all other SNPs
 		## that have significant associations with that gene
 		genes <- unique(as.character(eqtls$gene))
 		pb <- txtProgressBar(min=0, max=length(genes), initial=NA, file=stderr(), style=3)
 		ans <- sge.parLapply(genes, .submitLDpairs, eqtls=eqtls, geno=geno, maxP=maxP, 
-				minR=minR, genoOpt=genoOpt, progressBar=pb, njobs=length(genes), 
+				minR=minR, progressBar=pb, njobs=length(genes), 
 				packages=c("methods","MatrixEQTL"))
 		close(pb)
 	}
@@ -253,7 +251,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 	ans
 }
 
-.submitLDpairs <- function(selGene, eqtls, geno, maxP, minR, genoOpt, progressBar){
+.submitLDpairs <- function(selGene, eqtls, geno, maxP, minR, progressBar){
 	if(!sge.getOption("sge.use.cluster") && is.na(getTxtProgressBar(progressBar))){
 		setTxtProgressBar(progressBar, 0)
 	}
