@@ -290,8 +290,13 @@ chooseCov <- function(expression, genotype, covariate, candidates = seq(5, 50, b
 	if(n > 0){
 		selectedCov <- selectedCov$CreateFromMatrix(selectFrom[1:n, , drop=FALSE])
 	}
-	if(length(covariate) > 1)
-		selectedCov <- combineSlicedData(selectedCov, otherCov)
+	if(length(covariate) > 1){
+		if(n > 0){
+			selectedCov <- combineSlicedData(selectedCov, otherCov)
+		} else {
+			selectedCov <- otherCov
+		}
+	}
 	me <- runME(expression, genotype, selectedCov,
 			output=file.path(output, paste("me_", n, "_covariates.eQTL", sep="")), ...)
 	count <- c(all=0, cis=0, trans=0)
