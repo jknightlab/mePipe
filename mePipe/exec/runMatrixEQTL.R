@@ -337,7 +337,7 @@ if(!opt$ldOnly){
 						opt$model, opt$filterthreshold, opt$excludecov)
 				message("  Excluding ", length(pcaAssoc), " PCs associated with genotype (FDR < ", 
 						opt$excludecov, ")")
-				message("  Excluded PCs: ", pcaAssoc)
+				message("  Excluded PCs: ", paste(pcaAssoc, collapse=", "))
 			}
 			else{
 				message("  Using filtered PCA covariates in ", opt$filterpca)
