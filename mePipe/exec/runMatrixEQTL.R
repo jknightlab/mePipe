@@ -63,12 +63,22 @@ option_list <- list(
 				help = "Maximum number of PCA covariates to include. [default: %default]"),
 		make_option(c("--stepcov"), default = 5L,
 				help = "Step size to use when evaluating different numbers of PCA covariates"),
+		make_option(c("--ciscov"), default=0L,
+				help="The number of PCA covariates to use for cis-analysis. Ignored if '--selectcov' is used. [default: %default]"),
+		make_option(c("--transcov"), default=0L,
+				help="The number of PCA covariates to use for trans-analysis. Ignored if '--selectcov' is used. [default: %default]"),
+		make_option(c("--allcov"), default=0L,
+				help="The number of PCA covariates to use for non-position-aware analysis. Ignored if '--selectcov' is used. [default: %default]"),
 		make_option(c("--covthreshold"), default = 1e-3,
 				help = "FDR threshold below which associations should be considered significant when choosing the optimal number of covariates. [default: %default]"),
 		make_option(c("--covout"), default = "[output]_covSelect",
 				help = "Name of output directory for covariate selection. This is interpreted relative to the output directory. [default: %default]"),
 		make_option(c("--sortedSNPs"), action="store_true", default=FALSE,
 				help="Flag indicationg whether the SNPs in 'snpspos' are sorted by genomic coordinate. [default: %default]"),
+		make_option(c("--multiPeak"), action = "store_true", default=FALSE,
+				help="Flag indicating whether an attempt should be made to resolve multiple independent eSNPs for the same gene via multiple regression. [default: %default]"),
+		make_option(c("--multiPvalue"), default=1e-6,
+				help="P-value threshold to use for associations between secondary eSNPs and gene expression measurements. [default: %default]"),
 		make_option(c("--ldBlocks"), action="store_true", default=FALSE,
 				help="Flag indicating whether eQTLs should be summarised by LD block. [default: %default]"),
 		make_option(c("--ldPairs"), action="store_true", default=FALSE,
@@ -81,7 +91,7 @@ option_list <- list(
 				help="Maximum FDR of eQTLs to be included in list of SNPs for each block. Only blocks with at least one SNP significant at this level will be reported. [default: %default]"),
 		make_option(c("--ldR2pval"),
 				help="Maximum p-value for correlation between two eSNPs for that should be considered part of the same signal by `ldPairs`. Use this option to test for significant correlation between SNPs instead of using the fixed R^2 threshold. Note that this may group SNPs with relatively low LD together, especially if the samplesize is large."),
-		make_option(c("--ldR2"), default=0.8,
+		make_option(c("--ldR2", "--multiR2"), default=0.8,
 				help("Cut-off for R^2 between two eSNPs. All SNPs that have a higher R^2 with a peak SNP will be considered part of the same signal. [default: %default]")),
 		make_option(c("--ldOnly"), action="store_true", default=FALSE,
 				help="Compute LD blocks for existing eQTL results. This assumes that previous results can be loaded from the file implied by '--output'. Implies '--ldBlocks'"),
@@ -154,27 +164,37 @@ if(opt$qqplot && opt$bins == 0){
 
 opt$cisoutput <- paste(opt$output, 'cis', sep = '.')
 ## check whether we are running a position aware analysis and print summary of options
-if(opt$cisthreshold > 0 && !opt$ldOnly){
-	if(opt$cisdist == 0){
-		opt$cisthreshold <- 0
-	} else if(opt$snpspos == ''){
+if(opt$cisdist == 0 && opt$cisthreshold > 0){
+	opt$cisthreshold <- 0
+}
+doCis <- FALSE
+doTrans <- FALSE
+if(opt$cisthreshold > 0){
+	doCis <- TRUE
+}
+if(opt$pthreshold > 0 && doCis){
+	doTrans <- TRUE
+}
+doAll <- !doCis
+
+if(!doAll && !opt$ldOnly){
+	 if(opt$snpspos == ''){
 		stop("SNP positions are required for position aware analysis.")
-		opt$cisthreshold <- 0
-	} else if(opt$genepos == ''){
+	}
+	if(opt$genepos == ''){
 		stop("Gene positions are required for position aware analysis.")
-		opt$cisthreshold <- 0
-	} else if(opt$pthreshold > 0){
+	} 
+	if(doTrans && doCis){
 		message("Running position aware analysis for cis- and trans-associations with\n cis distance: ", 
 				opt$cisdist, "\n cis p-value: ", opt$cisthreshold, "\n trans p-value: ", 
 				opt$pthreshold)
-		message(" SNP positions: ", opt$snpspos, "\n Gene positions: ", opt$genepos)
-	} else{
+	} else if(doCis){
 		message("Running position aware analysis for cis associations only with\n cis distance: ", 
 				opt$cisdist, "\n cis p-value: ", opt$cisthreshold)
-		message(" SNP positions: ", opt$snpspos, "\n Gene positions: ", opt$genepos)
-	}
+	} 
+	message(" SNP positions: ", opt$snpspos, "\n Gene positions: ", opt$genepos)
 }
-if(opt$cisthreshold == 0 && !opt$ldOnly){
+if(doAll && !opt$ldOnly){
 	if(opt$pthreshold == 0){
 		message("\nAt least one of 'pthreshold' and 'cisthreshold' has to be greater than 0\n")
 		print_help(parser)
@@ -183,7 +203,7 @@ if(opt$cisthreshold == 0 && !opt$ldOnly){
 	message("Running analysis without positional information with\n p-value: ", opt$pthreshold)
 	opt$cisdist <- 0
 }
-if(!opt$ldOnly){
+if(!opt$ldOnly || opt$multiPeak){
 	if(opt$anova){
 		message(" Model: ANOVA")
 	} else if(opt$model == "cross"){
@@ -205,6 +225,11 @@ if(opt$ldPairs){
 	message("    FDR threshold for reported associations: ", opt$ldFDR)
 	message("    p-value threshold for correlations between SNPs: ", opt$ldR2pval)
 }
+if(opt$multiPeak){
+	message(" Multiple independent eQTLs will be resolved via multiple regression")
+	message("    P-value threshold for secondary peaks: ", opt$muliPvalue)
+	message("    R^2 threshold above which SNPs are associated with peak eSNP without further testing: ", opt$ldR2)
+}
 
 message("\nInput files:")
 if(opt$ldOnly){
@@ -222,7 +247,7 @@ if(opt$ldOnly){
 }
 
 message("\nOutput files:")
-if(opt$cisthreshold > 0){
+if(doCis){
 	if(!opt$ldOnly) message(" Cis associations: ", opt$cisoutput)
 	if(opt$ldBlocks){
 		message(" LD blocks for cis associations: ", paste(opt$cisoutput, "LD", sep="_"))
@@ -232,7 +257,11 @@ if(opt$cisthreshold > 0){
 						"LDpair", sep="_"))
 		message(" R^2 for all tested SNP pairs: ", paste(opt$cisoutput, "LDtable", sep="_"))
 	}
-	if(opt$pthreshold > 0){
+	if(opt$multiPeak){
+		message(" Peak eSNPs identified by multiple regression for cis associations: ",
+				paste(opt$cisoutput, "peaks", sep="_"))
+	}
+	if(doTrans){
 		if(!opt$ldOnly) message(" Trans associations: ", opt$output)
 		if(opt$ldBlocks){
 			message(" LD blocks for trans associations: ", paste(opt$output, "LD", sep="_"))
@@ -246,6 +275,10 @@ if(opt$cisthreshold > 0){
 							"LDpair", sep="_"))
 			message(" R^2 for all tested SNP pairs: ", paste(opt$output, "LDtable", sep="_"))
 		}
+		if(opt$multiPeak){
+			message(" Peak eSNPs identified by multiple regression for trans associations: ",
+					paste(opt$output, "peaks", sep="_"))
+		}
 	}
 } else{
 	if(!opt$ldOnly) message(" All associations: ", opt$output)
@@ -257,12 +290,19 @@ if(opt$cisthreshold > 0){
 				paste(opt$output, "LDpair", sep="_"))
 		message(" R^2 for all tested SNP pairs: ", paste(opt$output, "LDtable", sep="_"))
 	}
+	if(opt$multiPeak){
+		message(" Peak eSNPs identified by multiple regression for trans associations: ",
+				paste(opt$output, "peaks", sep="_"))
+	}
 }
 if(!opt$ldOnly) message(" R objects: ", paste(opt$output, "rdata", sep = '.'))
 message("")
 
 ## set-up environment for Rsge
 sge.options(sge.use.cluster=opt$cluster, sge.user.options="-S /bin/bash -V", sge.trace=opt$verbose)
+
+## initialise number of principle components to use
+selected <- list(all=opt$allcov, cis=opt$ciscov, trans=opt$transcov)
 
 if(!opt$ldOnly){
 	if(opt$selectcov){
@@ -383,7 +423,8 @@ if(!opt$ldOnly){
 		
 	} else{
 		## or just run a single analysis with pre-specified covariates
-		me <- runME(arguments$args[1], arguments$args[2], c(opt$covariate, opt$interaction), 
+		covariates <- c(opt$covariate, opt$interaction)
+		me <- runME(arguments$args[1], arguments$args[2], covariates, 
 				opt$error, opt$snpspos,	opt$genepos, opt$output, opt$cisoutput, 
 				getOptions(sep = opt$delim, missing = opt$missing, 
 						rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice),
@@ -467,5 +508,76 @@ if(opt$ldBlocks){
 		}
 	}
 	
+}
+if(opt$multiPeak){
+	load(paste(opt$output, 'rdata', sep='.'))
+	covariates <- list(opt$covariate, opt$interaction)
+	fileOptions <- getOptions(sep = opt$delim, missing = opt$missing, 
+			rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice)
+	
+	if(doAll){
+		if(is.null(me$all) || is.null(me$all$eqtls) || nrow(me$all$eqtls) == 0){
+			message("No associations found. Did you mean to run a position aware analysis?")
+		}else{
+			message("Resolving multiple peaks...")
+			allCovariates <- covariates
+			if(selected$all > 0){
+				pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
+						getOptions(sep = opt$delim, missing = opt$missing, 
+								rowskip = opt$rowskip, colskip = opt$colskip, 
+								slice = selected$all))
+				pc <- pc$CreateFromMatrix(pc[[1]])
+				allCovariates <- c(pc, covariates)
+			}
+			multi <- getMultiPeaks(me$all$eqtls, opt$multiPvalue, 
+					arguments$args[1], arguments$arg[2], allCovariates,
+					opt$ldR2, fileOptions, fileOptions, fileOptions)
+			write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
+					quote=FALSE, sep="\t")
+		}
+	} else{
+		if(doCis){
+			if(is.null(me$cis) || is.null(me$cis$eqtls) || nrow(me$cis$eqtls) == 0){
+				message("No cis-associations found")				
+			} else{
+				message("Resolving multiple peaks for cis associations...")
+				cisCovariates <- covariates
+				if(selected$cis > 0){
+					pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
+							getOptions(sep = opt$delim, missing = opt$missing, 
+									rowskip = opt$rowskip, colskip = opt$colskip, 
+									slice = selected$cis))
+					pc <- pc$CreateFromMatrix(pc[[1]])
+					cisCovariates <- c(pc, covariates)
+				}
+				multi <- getMultiPeaks(me$cis$eqtls, opt$multiPvalue, 
+						arguments$args[1], arguments$arg[2], cisCovariates,
+						opt$ldR2, fileOptions, fileOptions, fileOptions)
+				write.table(multi, file=paste(opt$cisoutput, "peaks", sep="_"), row.names=FALSE,
+						quote=FALSE, sep="\t")
+			}
+		}
+		if(doTrans){
+			if(is.null(me$trans) || is.null(me$trans$eqtls) || nrow(me$trans$eqtls) == 0){
+				message("No trans associations found")
+			} else{
+				message("Resolving multiple peaks for trans-associations...")
+				transCovariates <- covariates
+				if(selected$trans > 0){
+					pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
+							getOptions(sep = opt$delim, missing = opt$missing, 
+									rowskip = opt$rowskip, colskip = opt$colskip, 
+									slice = selected$trans))
+					pc <- pc$CreateFromMatrix(pc[[1]])
+					transCovariates <- c(pc, covariates)
+				}
+				multi$trans <- getMultiPeaks(me$trans$eqtls, opt$multiPvalue, 
+						arguments$args[1], arguments$arg[2], transCovariates,
+						opt$ldR2, fileOptions, fileOptions, fileOptions)
+				write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
+						quote=FALSE, sep="\t")
+			}
+		}
+	}
 }
 message("done.")
