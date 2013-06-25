@@ -96,7 +96,9 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	hits <- subset(hits, gene == current)
 	
 	## restrict gene expression data to current gene
-	expression$CreateFromMatrix(expression$FindRow(current)$row)
+	tmpExpr <- SlicedData$new()
+	tmpExpr$CreateFromMatrix(expression$FindRow(current)$row)
+	expression <- tmpExpr
 	
 	ans <- data.frame(snps=character(), gene=character(), statistic=numeric(), 
 			pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
