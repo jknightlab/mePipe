@@ -532,7 +532,6 @@ if(opt$multiPeak){
 	covariates <- list(opt$covariate, opt$interaction)
 	fileOptions <- getOptions(sep = opt$delim, missing = opt$missing, 
 			rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice)
-	selected <- lapply(me[c("all", "cis", "trans")], '[[', "covariate")
 	covInput <- if(opt$filtercov) opt$filterpca else opt$pcacov
 	if(doAll){
 		message("Resolving multiple peaks...")
