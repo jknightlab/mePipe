@@ -412,14 +412,21 @@ if(!opt$ldOnly){
 				overwrite = TRUE)
 		
 		## combine MatrixEQTL result objects for cis- and trans-analysis
-		if("cis" %in% names(results) && "trans" %in% names(results)){
+		if(doCis && doTrans){
 			load(file.path(opt$covout, results$cis[2]))
 			me.cis <- me
 			load(file.path(opt$covout, results$trans[2]))
 			me$param$output_file_name.cis <- me.cis$param$output_file_name.cis
 			me$cis <- me.cis$cis
-			save(me, file=paste(opt$output, "rdata", sep="."))
+		} else{
+			if(doAll) load(file.path(opt$covout, results$all[2]))
+			if(doCis) load(file.path(opt$covout, results$cis[2]))
+			if(doTrans) load(file.path(opt$covout, results$trans[2]))
 		}
+		me$all$covariates <- selected$selected["all"]
+		me$cis$covariates <- selected$selected["cis"]
+		me$trans$covariates <- selected$selected["trans"]
+		save(me, file=paste(opt$output, "rdata", sep="."))
 		
 	} else{
 		## or just run a single analysis with pre-specified covariates
@@ -434,6 +441,10 @@ if(!opt$ldOnly){
 						rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice),
 				opt$pthreshold, opt$cisthreshold, opt$model, opt$cisdist, opt$bins, opt$verbose,
 				opt$qqplot)
+		me$all$covariates <- selected$selected[["all"]]
+		me$cis$covariates <- selected$selected[["cis"]]
+		me$trans$covariates <- selected$selected[["trans"]]
+		save(me, file=paste(opt$output, "rdata", sep="."))
 	}
 } else{
 	load(paste(opt$output, 'rdata', sep='.'))
@@ -448,7 +459,6 @@ if(!opt$ldOnly){
 	}
 }
 if(opt$ldPairs){
-	
 	if(doAll){
 		message("Computing pairwise LD ...")
 		ans <- getLDpairs(me$all$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldPvalR2,
@@ -522,11 +532,12 @@ if(opt$multiPeak){
 	covariates <- list(opt$covariate, opt$interaction)
 	fileOptions <- getOptions(sep = opt$delim, missing = opt$missing, 
 			rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice)
-	selected <- selected$selected
+	selected <- lapply(me[c("all", "cis", "trans")], '[[', "covariate")
+	
 	if(doAll){
 		message("Resolving multiple peaks...")
 		allCovariates <- covariates
-		if(selected$all > 0){
+		if(me$all$covariates > 0){
 			pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
 					getOptions(sep = opt$delim, missing = opt$missing, 
 							rowskip = opt$rowskip, colskip = opt$colskip, 
@@ -543,7 +554,7 @@ if(opt$multiPeak){
 		if(doCis){
 			message("Resolving multiple peaks for cis associations...")
 			cisCovariates <- covariates
-			if(selected$cis > 0){
+			if(me$cis$covariates > 0){
 				pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
 						getOptions(sep = opt$delim, missing = opt$missing, 
 								rowskip = opt$rowskip, colskip = opt$colskip, 
@@ -560,7 +571,7 @@ if(opt$multiPeak){
 		if(doTrans){
 			message("Resolving multiple peaks for trans-associations...")
 			transCovariates <- covariates
-			if(selected$trans > 0){
+			if(me$trans$covariates > 0){
 				pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
 						getOptions(sep = opt$delim, missing = opt$missing, 
 								rowskip = opt$rowskip, colskip = opt$colskip, 
