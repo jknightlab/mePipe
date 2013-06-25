@@ -128,7 +128,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 				tmp2 <- tempfile(pattern=paste(current, hits$snps[i], paste(hits$snps[j], 
 										collapse="_"), "", sep="_"), 
 						tmpdir=".", fileext=".tmp")
-				tmpCov <- combineSlicedData(covariate, snps[c((1:depth)[-j], i)])
+				tmpCov <- Reduce(combineSlicedData, c(covariate, snps[c((1:depth)[-j], i)]))
 				me2 <- runME(expression, snps[[j]], tmpCov, output=tmp2, threshold=1, 
 						cisThreshold=0, cis=0, ...)
 				if(me2$all$eqtls$pvalue > pvalue){
