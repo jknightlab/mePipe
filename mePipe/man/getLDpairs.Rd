@@ -3,8 +3,8 @@
 \title{Identify all SNPs in LD with peak SNP
 The resulting list of eSNPs for the same gene may be considered independent signals.}
 \usage{
-  getLDpairs(eqtls, genotype, minFDR = 0.05, maxP = 0.01,
-    genoOpt = getOptions())
+  getLDpairs(eqtls, genotype, minFDR = 0.05, maxP = NULL,
+    minR = 0.8, genoOpt = getOptions())
 }
 \arguments{
   \item{eqtls}{A \code{data.frame} with eQTLs as generated
@@ -20,6 +20,9 @@ The resulting list of eSNPs for the same gene may be considered independent sign
   \item{maxP}{Maximum p-value for correlation between to
   eSNPs that should still be considered to be in
   significant LD.}
+
+  \item{minR}{Minimum R-squared at which two eSNPs will be
+  assumed to have no independent effect.}
 
   \item{genoOpt}{List of options for reading of genotype
   data.}

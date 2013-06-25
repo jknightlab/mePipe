@@ -75,7 +75,7 @@ option_list <- list(
 				help = "Name of output directory for covariate selection. This is interpreted relative to the output directory. [default: %default]"),
 		make_option(c("--sortedSNPs"), action="store_true", default=FALSE,
 				help="Flag indicationg whether the SNPs in 'snpspos' are sorted by genomic coordinate. [default: %default]"),
-		make_option(c("--multiPeak"), action = "store_true", default=FALSE,
+		make_option(c("--multiPeak"), action="store_true", default=FALSE,
 				help="Flag indicating whether an attempt should be made to resolve multiple independent eSNPs for the same gene via multiple regression. [default: %default]"),
 		make_option(c("--multiPvalue"), default=1e-6,
 				help="P-value threshold to use for associations between secondary eSNPs and gene expression measurements. [default: %default]"),
@@ -89,10 +89,10 @@ option_list <- list(
 				help="Maximum number of SNPs to consider for each LD block. [default: %default]"),
 		make_option(c("--ldFDR"), default=0.05,
 				help="Maximum FDR of eQTLs to be included in list of SNPs for each block. Only blocks with at least one SNP significant at this level will be reported. [default: %default]"),
-		make_option(c("--ldR2pval"),
+		make_option(c("--ldPvalR2"),
 				help="Maximum p-value for correlation between two eSNPs for that should be considered part of the same signal by `ldPairs`. Use this option to test for significant correlation between SNPs instead of using the fixed R^2 threshold. Note that this may group SNPs with relatively low LD together, especially if the samplesize is large."),
-		make_option(c("--ldR2", "--multiR2"), default=0.8,
-				help("Cut-off for R^2 between two eSNPs. All SNPs that have a higher R^2 with a peak SNP will be considered part of the same signal. [default: %default]")),
+		make_option(c("--ldR2"), default=0.8,
+				help="Cut-off for R^2 between two eSNPs. All SNPs that have a higher R^2 with a peak SNP will be considered part of the same signal. [default: %default]"),
 		make_option(c("--ldOnly"), action="store_true", default=FALSE,
 				help="Compute LD blocks for existing eQTL results. This assumes that previous results can be loaded from the file implied by '--output'. Implies '--ldBlocks'"),
 		make_option(c("-d", "--delim"), default = '\t',
@@ -223,11 +223,11 @@ if(opt$ldBlocks){
 if(opt$ldPairs){
 	message(" eQTLs will be grouped by pairwise LD with peak SNP")
 	message("    FDR threshold for reported associations: ", opt$ldFDR)
-	message("    p-value threshold for correlations between SNPs: ", opt$ldR2pval)
+	message("    p-value threshold for correlations between SNPs: ", opt$ldPvalR2)
 }
 if(opt$multiPeak){
 	message(" Multiple independent eQTLs will be resolved via multiple regression")
-	message("    P-value threshold for secondary peaks: ", opt$muliPvalue)
+	message("    P-value threshold for secondary peaks: ", opt$multiPvalue)
 	message("    R^2 threshold above which SNPs are associated with peak eSNP without further testing: ", opt$ldR2)
 }
 
@@ -302,7 +302,7 @@ message("")
 sge.options(sge.use.cluster=opt$cluster, sge.user.options="-S /bin/bash -V", sge.trace=opt$verbose)
 
 ## initialise number of principle components to use
-selected <- list(all=opt$allcov, cis=opt$ciscov, trans=opt$transcov)
+selected <- list(selected=list(all=opt$allcov, cis=opt$ciscov, trans=opt$transcov))
 
 if(!opt$ldOnly){
 	if(opt$selectcov){
@@ -439,9 +439,9 @@ if(!opt$ldOnly){
 if(opt$ldPairs){
 	load(paste(opt$output, 'rdata', sep='.'))
 	
-	if(!is.null(me$all) && !is.null(me$all$eqtls)){
+	if(doAll && !is.null(me$all) && !is.null(me$all$eqtls)){
 		message("Computing pairwise LD ...")
-		ans <- getLDpairs(me$all$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldR2pval,
+		ans <- getLDpairs(me$all$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldPvalR2,
 				minR=opt$ldR2, genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
 						rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
 		write.table(ans$groups, file=paste(opt$output, "LDpair", sep="_"), 
@@ -449,9 +449,9 @@ if(opt$ldPairs){
 		write.table(ans$proxies, file=paste(opt$output, "LDtable", sep="_"), 
 				quote=FALSE, row.names=FALSE, sep="\t")
 	} else{
-		if(!is.null(me$cis) && !is.null(me$cis$eqtls)){
+		if(doCis && !is.null(me$cis) && !is.null(me$cis$eqtls)){
 			message("Computing pairwise LD for cis associations...")
-			ans <- getLDpairs(me$cis$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldR2pval,
+			ans <- getLDpairs(me$cis$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldPvalR2,
 					minR=opt$ldR2, genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
 							rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
 			write.table(ans$groups, file=paste(opt$cisoutput, "LDpair", sep="_"), 
@@ -459,9 +459,9 @@ if(opt$ldPairs){
 			write.table(ans$proxies, file=paste(opt$cisoutput, "LDtable", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
-		if(!is.null(me$trans) && !is.null(me$trans$eqtls)){
+		if(doTrans && !is.null(me$trans) && !is.null(me$trans$eqtls)){
 			message("Computing pairwise LD for trans associations...")
-			ans <- getLDpairs(me$trans$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldR2pval,
+			ans <- getLDpairs(me$trans$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldPvalR2,
 					minR=opt$ldR2, genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
 							rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice))
 			write.table(ans$groups, file=paste(opt$output, "LDpair", sep="_"), 
@@ -514,7 +514,7 @@ if(opt$multiPeak){
 	covariates <- list(opt$covariate, opt$interaction)
 	fileOptions <- getOptions(sep = opt$delim, missing = opt$missing, 
 			rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice)
-	
+	selected <- selected$selected
 	if(doAll){
 		if(is.null(me$all) || is.null(me$all$eqtls) || nrow(me$all$eqtls) == 0){
 			message("No associations found. Did you mean to run a position aware analysis?")
@@ -529,7 +529,7 @@ if(opt$multiPeak){
 				pc <- pc$CreateFromMatrix(pc[[1]])
 				allCovariates <- c(pc, covariates)
 			}
-			multi <- getMultiPeaks(me$all$eqtls, opt$multiPvalue, 
+			multi <- getMultiPeak(me$all$eqtls, opt$multiPvalue, 
 					arguments$args[1], arguments$arg[2], allCovariates,
 					opt$ldR2, fileOptions, fileOptions, fileOptions)
 			write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
@@ -550,7 +550,7 @@ if(opt$multiPeak){
 					pc <- pc$CreateFromMatrix(pc[[1]])
 					cisCovariates <- c(pc, covariates)
 				}
-				multi <- getMultiPeaks(me$cis$eqtls, opt$multiPvalue, 
+				multi <- getMultiPeak(me$cis$eqtls, opt$multiPvalue, 
 						arguments$args[1], arguments$arg[2], cisCovariates,
 						opt$ldR2, fileOptions, fileOptions, fileOptions)
 				write.table(multi, file=paste(opt$cisoutput, "peaks", sep="_"), row.names=FALSE,
@@ -571,7 +571,7 @@ if(opt$multiPeak){
 					pc <- pc$CreateFromMatrix(pc[[1]])
 					transCovariates <- c(pc, covariates)
 				}
-				multi$trans <- getMultiPeaks(me$trans$eqtls, opt$multiPvalue, 
+				multi$trans <- getMultiPeak(me$trans$eqtls, opt$multiPvalue, 
 						arguments$args[1], arguments$arg[2], transCovariates,
 						opt$ldR2, fileOptions, fileOptions, fileOptions)
 				write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
