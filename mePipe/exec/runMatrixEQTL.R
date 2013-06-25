@@ -538,10 +538,10 @@ if(opt$multiPeak){
 		message("Resolving multiple peaks...")
 		allCovariates <- covariates
 		if(me$all$covariates > 0){
-			pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
+			pc <- loadData(if(opt$filterpca) opt$filterout else opt$pcacov, 
 					getOptions(sep = opt$delim, missing = opt$missing, 
 							rowskip = opt$rowskip, colskip = opt$colskip, 
-							slice = selected$all))
+							slice = me$all$covariates))
 			pc <- pc$CreateFromMatrix(pc[[1]])
 			allCovariates <- c(pc, covariates)
 		}
@@ -555,10 +555,10 @@ if(opt$multiPeak){
 			message("Resolving multiple peaks for cis associations...")
 			cisCovariates <- covariates
 			if(me$cis$covariates > 0){
-				pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
+				pc <- loadData(if(opt$filterpca) opt$filterout else opt$pcacov, 
 						getOptions(sep = opt$delim, missing = opt$missing, 
 								rowskip = opt$rowskip, colskip = opt$colskip, 
-								slice = selected$cis))
+								slice = me$cis$covariates))
 				pc <- pc$CreateFromMatrix(pc[[1]])
 				cisCovariates <- c(pc, covariates)
 			}
@@ -572,10 +572,10 @@ if(opt$multiPeak){
 			message("Resolving multiple peaks for trans-associations...")
 			transCovariates <- covariates
 			if(me$trans$covariates > 0){
-				pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
+				pc <- loadData(if(opt$filterpca) opt$filterout else opt$pcacov, 
 						getOptions(sep = opt$delim, missing = opt$missing, 
 								rowskip = opt$rowskip, colskip = opt$colskip, 
-								slice = selected$trans))
+								slice = me$trans$covariates))
 				pc <- pc$CreateFromMatrix(pc[[1]])
 				transCovariates <- c(pc, covariates)
 			}
