@@ -64,7 +64,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 				subset(candidates, gene %in% names(snpCount)[snpCount == depth]))
 		candidates <- subset(candidates, !gene %in% complete$gene)
 		if(nrow(candidates) == 0) break
-		ans <- Rsge::parLapply(unique(candidates$gene), .submitMultiPeak, candidates, 
+		ans <- Rsge::sge.parLapply(unique(candidates$gene), .submitMultiPeak, candidates, 
 				depth, pvalue, gene, snps, cvrt, ...)
 		primary <- mapply(function(x,y) subset(x, secondary==y$snps[1])[,-ncol(x)], 
 				primary, secondary, SIMPLIFY=FALSE)
@@ -115,7 +115,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	## Fit model including peak SNP and one other candidate
 	tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
 			tmpdir=".", fileext=".tmp")
-	tmpCov <- Reduce(combineSlicedData, list(covariate, snps[1:depth]))
+	tmpCov <- Reduce(combineSlicedData, c(covariate, snps[1:depth]))
 	me1 <- runME(expression, Reduce(combineSlicedData, snps[-(1:depth)]), 
 			tmpCov, output=tmp1, threshold=pvalue, ...)
 	unlink(paste0(tmp1, "*"))
