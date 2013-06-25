@@ -33,26 +33,14 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate,
 	if(is(expression, "SlicedData")){
 		gene <- expression
 	} else{
-		gene <- SlicedData$new();
-		gene$fileDelimiter <- exprOpt$sep
-		gene$fileOmitCharacters = exprOpt$missing
-		gene$fileSkipRows = exprOpt$rowskip
-		gene$fileSkipColumns = exprOpt$colskip
-		gene$fileSliceSize = exprOpt$slice
-		gene$LoadFile(expression)
+		gene <- loadData(expression, exprOpt)
 	}
 	## genotypes
 	snps <- NULL
 	if(is(genotype, "SlicedData")){
 		snps <- genotype
 	} else{
-		snps <- SlicedData$new();
-		snps$fileDelimiter <- genoOpt$sep
-		snps$fileOmitCharacters <- genoOpt$missing
-		snps$fileSkipRows <- genoOpt$rowskip
-		snps$fileSkipColumns <- genoOpt$colskip
-		snps$fileSliceSize <- genoOpt$slice
-		snps$LoadFile(genotype)
+		snps <- loadData(genotype, genoOpt)
 	}
 	cvrt <- NULL
 	if(!missing(covariate)){
