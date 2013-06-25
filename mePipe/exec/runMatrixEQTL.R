@@ -435,11 +435,21 @@ if(!opt$ldOnly){
 				opt$pthreshold, opt$cisthreshold, opt$model, opt$cisdist, opt$bins, opt$verbose,
 				opt$qqplot)
 	}
+} else{
+	load(paste(opt$output, 'rdata', sep='.'))
+	if(doAll && (is.null(me$all) || is.null(me$all$eqtls) || nrow(me$all$eqtls) == 0)){
+		message("No associations found. Did you mean to run a position aware analysis?")
+	}
+	if(doCis && (is.null(me$cis) || is.null(me$cis$eqtls) || nrow(me$cis$eqtls) == 0)){
+		message("No cis-associations found. Maybe you didn't run a position aware analysis?")				
+	}
+	if(doTrans && (is.null(me$trans) || is.null(me$trans$eqtls) || nrow(me$trans$eqtls) == 0)){
+		message("No trans associations found. Maybe you didn't run a position aware analysis?")
+	}
 }
 if(opt$ldPairs){
-	load(paste(opt$output, 'rdata', sep='.'))
 	
-	if(doAll && !is.null(me$all) && !is.null(me$all$eqtls)){
+	if(doAll){
 		message("Computing pairwise LD ...")
 		ans <- getLDpairs(me$all$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldPvalR2,
 				minR=opt$ldR2, genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
@@ -449,7 +459,7 @@ if(opt$ldPairs){
 		write.table(ans$proxies, file=paste(opt$output, "LDtable", sep="_"), 
 				quote=FALSE, row.names=FALSE, sep="\t")
 	} else{
-		if(doCis && !is.null(me$cis) && !is.null(me$cis$eqtls)){
+		if(doCis){
 			message("Computing pairwise LD for cis associations...")
 			ans <- getLDpairs(me$cis$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldPvalR2,
 					minR=opt$ldR2, genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
@@ -459,7 +469,7 @@ if(opt$ldPairs){
 			write.table(ans$proxies, file=paste(opt$cisoutput, "LDtable", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
-		if(doTrans && !is.null(me$trans) && !is.null(me$trans$eqtls)){
+		if(doTrans){
 			message("Computing pairwise LD for trans associations...")
 			ans <- getLDpairs(me$trans$eqtls, arguments$args[2], minFDR=opt$ldFDR, maxP=opt$ldPvalR2,
 					minR=opt$ldR2, genoOpt=getOptions(sep = opt$delim, missing = opt$missing, 
@@ -472,14 +482,13 @@ if(opt$ldPairs){
 	}
 }
 if(opt$ldBlocks){
-	load(paste(opt$output, 'rdata', sep='.'))
 	pos <- read.table(opt$snpspos, header=TRUE, stringsAsFactors=FALSE, row.names=1)
 	names(pos) <- c("chrom", "pos")
 	
 	## SNPs in 'pos' have to be sorted by genomic position
 	if(!opt$sortedSNPs) pos <- pos[order(pos$chrom, pos$pos),]
 	
-	if(!is.null(me$all) && !is.null(me$all$eqtls)){
+	if(doAll){
 		message("Computing LD structure...")
 		blocks <- getLDblocks(me$all$eqtls, arguments$args[2], pos, dist=opt$maxDist, 
 				window=opt$maxSNPs, verbose=opt$verbose, minFDR=opt$ldFDR,
@@ -488,7 +497,7 @@ if(opt$ldBlocks){
 		write.table(blocks, file=paste(opt$output, "LD", sep="_"), 
 				quote=FALSE, row.names=FALSE, sep="\t")
 	} else{
-		if(!is.null(me$cis) && !is.null(me$cis$eqtls)){
+		if(doCis){
 			message("Computing LD structure for cis associations...")
 			blocks <- getLDblocks(me$cis$eqtls, arguments$args[2], pos, dist=opt$maxDist, 
 					window=opt$maxSNPs, verbose=opt$verbose, minFDR=opt$ldFDR,
@@ -497,7 +506,7 @@ if(opt$ldBlocks){
 			write.table(blocks, file=paste(opt$cisoutput, "LD", sep="_"), 
 					quote=FALSE, row.names=FALSE, sep="\t")
 		}
-		if(!is.null(me$trans) && !is.null(me$trans$eqtls)){
+		if(doTrans){
 			message("Computing LD structure for trans associations...")
 			blocks <- getLDblocks(me$trans$eqtls, arguments$args[2], pos, dist=opt$maxDist,
 					window=opt$maxSNPs, verbose=opt$verbose, minFDR=opt$ldFDR,
@@ -510,73 +519,60 @@ if(opt$ldBlocks){
 	
 }
 if(opt$multiPeak){
-	load(paste(opt$output, 'rdata', sep='.'))
 	covariates <- list(opt$covariate, opt$interaction)
 	fileOptions <- getOptions(sep = opt$delim, missing = opt$missing, 
 			rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice)
 	selected <- selected$selected
 	if(doAll){
-		if(is.null(me$all) || is.null(me$all$eqtls) || nrow(me$all$eqtls) == 0){
-			message("No associations found. Did you mean to run a position aware analysis?")
-		}else{
-			message("Resolving multiple peaks...")
-			allCovariates <- covariates
-			if(selected$all > 0){
+		message("Resolving multiple peaks...")
+		allCovariates <- covariates
+		if(selected$all > 0){
+			pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
+					getOptions(sep = opt$delim, missing = opt$missing, 
+							rowskip = opt$rowskip, colskip = opt$colskip, 
+							slice = selected$all))
+			pc <- pc$CreateFromMatrix(pc[[1]])
+			allCovariates <- c(pc, covariates)
+		}
+		multi <- getMultiPeak(me$all$eqtls, opt$multiPvalue, 
+				arguments$args[1], arguments$arg[2], allCovariates,
+				opt$ldR2, fileOptions, fileOptions, fileOptions)
+		write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
+				quote=FALSE, sep="\t")
+	} else{
+		if(doCis){
+			message("Resolving multiple peaks for cis associations...")
+			cisCovariates <- covariates
+			if(selected$cis > 0){
 				pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
 						getOptions(sep = opt$delim, missing = opt$missing, 
 								rowskip = opt$rowskip, colskip = opt$colskip, 
-								slice = selected$all))
+								slice = selected$cis))
 				pc <- pc$CreateFromMatrix(pc[[1]])
-				allCovariates <- c(pc, covariates)
+				cisCovariates <- c(pc, covariates)
 			}
-			multi <- getMultiPeak(me$all$eqtls, opt$multiPvalue, 
-					arguments$args[1], arguments$arg[2], allCovariates,
+			multi <- getMultiPeak(me$cis$eqtls, opt$multiPvalue, 
+					arguments$args[1], arguments$arg[2], cisCovariates,
+					opt$ldR2, fileOptions, fileOptions, fileOptions)
+			write.table(multi, file=paste(opt$cisoutput, "peaks", sep="_"), row.names=FALSE,
+					quote=FALSE, sep="\t")
+		}
+		if(doTrans){
+			message("Resolving multiple peaks for trans-associations...")
+			transCovariates <- covariates
+			if(selected$trans > 0){
+				pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
+						getOptions(sep = opt$delim, missing = opt$missing, 
+								rowskip = opt$rowskip, colskip = opt$colskip, 
+								slice = selected$trans))
+				pc <- pc$CreateFromMatrix(pc[[1]])
+				transCovariates <- c(pc, covariates)
+			}
+			multi$trans <- getMultiPeak(me$trans$eqtls, opt$multiPvalue, 
+					arguments$args[1], arguments$arg[2], transCovariates,
 					opt$ldR2, fileOptions, fileOptions, fileOptions)
 			write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")
-		}
-	} else{
-		if(doCis){
-			if(is.null(me$cis) || is.null(me$cis$eqtls) || nrow(me$cis$eqtls) == 0){
-				message("No cis-associations found")				
-			} else{
-				message("Resolving multiple peaks for cis associations...")
-				cisCovariates <- covariates
-				if(selected$cis > 0){
-					pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
-							getOptions(sep = opt$delim, missing = opt$missing, 
-									rowskip = opt$rowskip, colskip = opt$colskip, 
-									slice = selected$cis))
-					pc <- pc$CreateFromMatrix(pc[[1]])
-					cisCovariates <- c(pc, covariates)
-				}
-				multi <- getMultiPeak(me$cis$eqtls, opt$multiPvalue, 
-						arguments$args[1], arguments$arg[2], cisCovariates,
-						opt$ldR2, fileOptions, fileOptions, fileOptions)
-				write.table(multi, file=paste(opt$cisoutput, "peaks", sep="_"), row.names=FALSE,
-						quote=FALSE, sep="\t")
-			}
-		}
-		if(doTrans){
-			if(is.null(me$trans) || is.null(me$trans$eqtls) || nrow(me$trans$eqtls) == 0){
-				message("No trans associations found")
-			} else{
-				message("Resolving multiple peaks for trans-associations...")
-				transCovariates <- covariates
-				if(selected$trans > 0){
-					pc <- loadData(if(opt$filerpca) opt$filterout else opt$pcacov, 
-							getOptions(sep = opt$delim, missing = opt$missing, 
-									rowskip = opt$rowskip, colskip = opt$colskip, 
-									slice = selected$trans))
-					pc <- pc$CreateFromMatrix(pc[[1]])
-					transCovariates <- c(pc, covariates)
-				}
-				multi$trans <- getMultiPeak(me$trans$eqtls, opt$multiPvalue, 
-						arguments$args[1], arguments$arg[2], transCovariates,
-						opt$ldR2, fileOptions, fileOptions, fileOptions)
-				write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
-						quote=FALSE, sep="\t")
-			}
 		}
 	}
 }
