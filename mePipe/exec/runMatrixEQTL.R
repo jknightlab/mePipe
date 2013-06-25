@@ -545,7 +545,7 @@ if(opt$multiPeak){
 			allCovariates <- c(pc, covariates)
 		}
 		multi <- getMultiPeak(me$all$eqtls, opt$multiPvalue, 
-				arguments$args[1], arguments$arg[2], allCovariates,
+				arguments$args[1], arguments$arg[2], allCovariates, opt$ldFDR,
 				opt$ldR2, fileOptions, fileOptions, fileOptions)
 		write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
 				quote=FALSE, sep="\t")
@@ -562,7 +562,7 @@ if(opt$multiPeak){
 				cisCovariates <- c(pc, covariates)
 			}
 			multi <- getMultiPeak(me$cis$eqtls, opt$multiPvalue, 
-					arguments$args[1], arguments$arg[2], cisCovariates,
+					arguments$args[1], arguments$arg[2], cisCovariates, opt$ldFDR,
 					opt$ldR2, fileOptions, fileOptions, fileOptions)
 			write.table(multi, file=paste(opt$cisoutput, "peaks", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")
@@ -579,7 +579,7 @@ if(opt$multiPeak){
 				transCovariates <- c(pc, covariates)
 			}
 			multi$trans <- getMultiPeak(me$trans$eqtls, opt$multiPvalue, 
-					arguments$args[1], arguments$arg[2], transCovariates,
+					arguments$args[1], arguments$arg[2], transCovariates, opt$ldFDR,
 					opt$ldR2, fileOptions, fileOptions, fileOptions)
 			write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")

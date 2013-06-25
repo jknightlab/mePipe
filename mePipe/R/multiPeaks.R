@@ -16,6 +16,7 @@
 #' or a \code{slicedData} object.
 #' @param covariat List of covariates to use. These can either be given as file names 
 #' or a \code{slicedData} objects.
+#' @param minFDR Minimum FDR for associations to be considered.
 #' @param minR Minimum R-squared at which two eSNPs will be assumed to have no independent effect.
 #' @param exprOpt Options for reading of gene expression file. 
 #' @param genoOpt Options for reading of gene expression file.
@@ -25,7 +26,7 @@
 #' 
 #' @author Peter Humburg
 #' @export
-getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate,
+getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, minFDR,
 		minR, exprOpt=getOptions(), genoOpt=getOptions(), covOpt=getOptions(), ...){
 	## create data objects
 	## gene expression
@@ -52,7 +53,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate,
 	}
 	
 	depth <- 1
-	if(!"Rsquared" %in% names(hits)) hits <- getLDpairs(hits, snps, minR=minR)$group
+	if(!"Rsquared" %in% names(hits)) hits <- getLDpairs(hits, snps, minR=minR, minFDR=minFDR)$group
 	candidates <- hits
 	candidates$finalPvalue <- as.numeric(NA)
 	complete <- subset(candidates, FALSE)
@@ -68,7 +69,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate,
 		primary <- mapply(function(x,y) subset(x, secondary==y$snps[1])[,-ncol(x)], 
 				primary, secondary, SIMPLIFY=FALSE)
 		secondary <- Reduce(rbind, lapply(ans, '[[', "secondary"))
-		secondary <- getLDpairs(secondary, snps, minR=minR)$group
+		secondary <- getLDpairs(secondary, snps, minR=minR, minFDR=1)$group
 		
 		## update candidates
 		for(p in primary){
