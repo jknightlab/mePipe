@@ -53,7 +53,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	}
 	
 	depth <- 1
-	if(!"Rsquared" %in% names(hits)) hits <- getLDpairs(hits, snps, minR=minR, minFDR=minFDR)$group
+	if(!"Rsquared" %in% names(hits)) hits <- getLDpairs(hits, snps, minR=minR, minFDR=minFDR)$groups
 	candidates <- hits
 	candidates$finalPvalue <- as.numeric(NA)
 	complete <- subset(candidates, FALSE)
