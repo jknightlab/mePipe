@@ -316,7 +316,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 						df=1, lower.tail=FALSE)
 				selectedProxies <-subset(proxies, !is.na(pval) & pval <= maxP)
 			} else{
-				selectedProxies <- subset(proxies, !is.na(Rsquared) & Rsquared < minR)
+				selectedProxies <- subset(proxies, !is.na(Rsquared) & Rsquared > minR)
 			}
 						
 			if(nrow(selectedProxies) >= 1){
