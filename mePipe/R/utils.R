@@ -43,6 +43,7 @@ toCubeX <- function(data, snps){
 
 #' Load Dataset into SlicedData object
 #' @author Peter Humnburg
+#' @export
 #' @keywords internal
 loadData <- function(file, options){
 	data <- SlicedData$new()
