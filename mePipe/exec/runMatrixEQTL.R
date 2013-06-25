@@ -541,8 +541,9 @@ if(opt$multiPeak){
 					getOptions(sep = opt$delim, missing = opt$missing, 
 							rowskip = opt$rowskip, colskip = opt$colskip, 
 							slice = me$all$covariates))
-			pc <- pc$CreateFromMatrix(pc[[1]])
-			allCovariates <- c(pc, covariates)
+			subPC <- new("SlicedData")
+			subPC$CreateFromMatrix(pc[[1]])
+			allCovariates <- c(subPC, covariates)
 		}
 		multi <- getMultiPeak(me$all$eqtls, opt$multiPvalue, 
 				arguments$args[1], arguments$arg[2], allCovariates, opt$ldFDR,
@@ -558,8 +559,9 @@ if(opt$multiPeak){
 						getOptions(sep = opt$delim, missing = opt$missing, 
 								rowskip = opt$rowskip, colskip = opt$colskip, 
 								slice = me$cis$covariates))
-				pc <- pc$CreateFromMatrix(pc[[1]])
-				cisCovariates <- c(pc, covariates)
+				subPC <- new("SlicedData")
+				subPC$CreateFromMatrix(pc[[1]])
+				cisCovariates <- c(subPC, covariates)
 			}
 			multi <- getMultiPeak(me$cis$eqtls, opt$multiPvalue, 
 					arguments$args[1], arguments$arg[2], cisCovariates, opt$ldFDR,
@@ -575,8 +577,9 @@ if(opt$multiPeak){
 						getOptions(sep = opt$delim, missing = opt$missing, 
 								rowskip = opt$rowskip, colskip = opt$colskip, 
 								slice = me$trans$covariates))
-				pc <- pc$CreateFromMatrix(pc[[1]])
-				transCovariates <- c(pc, covariates)
+				subPC <- new("SlicedData")
+				subPC$CreateFromMatrix(pc[[1]])
+				transCovariates <- c(subPC, covariates)
 			}
 			multi$trans <- getMultiPeak(me$trans$eqtls, opt$multiPvalue, 
 					arguments$args[1], arguments$arg[2], transCovariates, opt$ldFDR,
