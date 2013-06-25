@@ -449,13 +449,25 @@ if(!opt$ldOnly){
 } else{
 	load(paste(opt$output, 'rdata', sep='.'))
 	if(doAll && (is.null(me$all) || is.null(me$all$eqtls) || nrow(me$all$eqtls) == 0)){
-		message("No associations found. Did you mean to run a position aware analysis?")
+		stop("No associations found. Did you mean to run a position aware analysis?")
 	}
 	if(doCis && (is.null(me$cis) || is.null(me$cis$eqtls) || nrow(me$cis$eqtls) == 0)){
-		message("No cis-associations found. Maybe you didn't run a position aware analysis?")				
+		message <- "No cis-associations found. Maybe you didn't run a position aware analysis?" 
+		if(doTrans){
+			message(message)
+			doCis <- FALSE
+		} else {
+			stop(message)
+		}
 	}
 	if(doTrans && (is.null(me$trans) || is.null(me$trans$eqtls) || nrow(me$trans$eqtls) == 0)){
-		message("No trans associations found. Maybe you didn't run a position aware analysis?")
+		message <- "No trans associations found. Maybe you didn't run a position aware analysis?"
+		if(doCis){
+			message(message)
+			doTrans <- FALSE
+		} else{
+			stop(message)
+		}
 	}
 }
 if(opt$ldPairs){
