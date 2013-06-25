@@ -304,14 +304,14 @@ sge.options(sge.use.cluster=opt$cluster, sge.user.options="-S /bin/bash -V", sge
 ## initialise number of principle components to use
 selected <- list(selected=list(all=opt$allcov, cis=opt$ciscov, trans=opt$transcov))
 
+## add output prefix to file names (unless custom names were provided)
+opt$pcacov <- gsub("[output]", opt$output, opt$pcacov, fixed=TRUE)
+opt$filterpca <- gsub("[output]", opt$output, opt$filterpca, fixed=TRUE)
+opt$covout <- gsub("[output]", opt$output, opt$covout, fixed=TRUE)
+opt$filterout <- gsub("[output]", opt$output, opt$filterout, fixed=TRUE)
+
 if(!opt$ldOnly){
 	if(opt$selectcov){
-		## add output prefix to file names (unless custom names were provided)
-		opt$pcacov <- gsub("[output]", opt$output, opt$pcacov, fixed=TRUE)
-		opt$filterpca <- gsub("[output]", opt$output, opt$filterpca, fixed=TRUE)
-		opt$covout <- gsub("[output]", opt$output, opt$covout, fixed=TRUE)
-		opt$filterout <- gsub("[output]", opt$output, opt$filterout, fixed=TRUE)
-		
 		message("Selecting optimal number of PCA covariates ...")
 		if(!file.exists(opt$pcacov) && (!opt$filtercov || !file.exists(opt$filterpca)) ){
 			## create PCA covariates
