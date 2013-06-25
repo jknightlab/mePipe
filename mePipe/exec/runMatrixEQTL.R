@@ -375,8 +375,8 @@ if(!opt$ldOnly){
 				genePos = opt$genepos,
 				cis = opt$cisdist,
 				bins = opt$bins, qqplot = opt$qqplot, 
-				doCis = opt$cisthreshold > 0, 
-				doTrans = opt$cisthreshold > 0 && opt$pthreshold > 0)
+				doCis = doCis, 
+				doTrans = doTrans)
 		
 		for(i in 1:length(selected$selected)){
 			if(names(selected$selected)[i] == "all"){
@@ -547,7 +547,8 @@ if(opt$multiPeak){
 		}
 		multi <- getMultiPeak(me$all$eqtls, opt$multiPvalue, 
 				arguments$args[1], arguments$arg[2], allCovariates, opt$ldFDR,
-				opt$ldR2, fileOptions, fileOptions, fileOptions)
+				opt$ldR2, fileOptions, fileOptions, fileOptions, 
+				error=opt$error, model=opt$model)
 		write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
 				quote=FALSE, sep="\t")
 	} else{
@@ -565,7 +566,8 @@ if(opt$multiPeak){
 			}
 			multi <- getMultiPeak(me$cis$eqtls, opt$multiPvalue, 
 					arguments$args[1], arguments$arg[2], cisCovariates, opt$ldFDR,
-					opt$ldR2, fileOptions, fileOptions, fileOptions)
+					opt$ldR2, fileOptions, fileOptions, fileOptions, 
+					error=opt$error, model=opt$model)
 			write.table(multi, file=paste(opt$cisoutput, "peaks", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")
 		}
@@ -583,7 +585,8 @@ if(opt$multiPeak){
 			}
 			multi$trans <- getMultiPeak(me$trans$eqtls, opt$multiPvalue, 
 					arguments$args[1], arguments$arg[2], transCovariates, opt$ldFDR,
-					opt$ldR2, fileOptions, fileOptions, fileOptions)
+					opt$ldR2, fileOptions, fileOptions, fileOptions, 
+					error=opt$error, model=opt$model)
 			write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")
 		}
