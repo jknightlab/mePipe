@@ -159,15 +159,10 @@ covAssoc <- function(genotype, covariate, otherCov, output, covOut, genoOpt = ge
 #' @author Peter Humburg
 #' @export
 loadCovariates <- function(files, options = getOptions()){
-	cvrt <- lapply(files, function(f){
-				cvrt <- SlicedData$new();
-				cvrt$fileDelimiter <- options$sep
-				cvrt$fileOmitCharacters <- options$missing
-				cvrt$fileSkipRows <- options$rowskip
-				cvrt$fileSkipColumns <- options$colskip
-				cvrt$fileSliceSize <- options$slice
-				cvrt$LoadFile(f)
-			})
+	files <- files[!sapply(files, is.null)]
+	cvrt <- lapply(files, 
+			function(f, opt) if(is(f, "SlicedData")) f else loadData(f, opt), 
+			options)
 	Reduce(combineSlicedData, cvrt)
 }
 
