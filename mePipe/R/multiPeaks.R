@@ -61,27 +61,34 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		## only proceed with genes that have more than one SNP associated with them
 		snpCount <- table(candidates$gene)
 		complete <- rbind(complete, 
-				subset(candidates, gene %in% names(snpCount)[snpCount == depth]))
+				subset(candidates, gene %in% names(snpCount)[snpCount <= depth]))
 		candidates <- subset(candidates, !gene %in% complete$gene)
 		if(nrow(candidates) == 0) break
 		ans <- Rsge::sge.parLapply(unique(candidates$gene), .submitMultiPeak, candidates, 
 				depth, pvalue, gene, snps, cvrt, ...)
-		primary <- mapply(function(x,y) subset(x, secondary==y$snps[1])[,-ncol(x)], 
-				primary, secondary, SIMPLIFY=FALSE)
+		primary <- lapply(ans, '[[', "primary")
 		secondary <- Reduce(rbind, lapply(ans, '[[', "secondary"))
-		secondary <- getLDpairs(secondary, snps, minR=minR, minFDR=1)$group
+		secondary <- getLDpairs(secondary, snps, minR=minR, minFDR=1)$groups
 		
 		## update candidates
 		for(p in primary){
-			idx <- which(candidates$snps == p$snps[1] & candidates$gene == p$gene[1])
+			idx <- which(candidates$snps == as.character(p$snps[1]) & 
+							candidates$gene == as.character(p$gene[1]))
 			candidates$finalPvalue[idx] <- p$pvalue[1]
 		}
 		for(g in unique(candidates$gene)){
-			explained <- subset(secondary, gene == g)
-			explained <- c(explained$snps, unlist(strsplit(explained$others, ",")))
-			candidates <- subset(candidtates, gene == g & snps %in% explained)
+			secondPeak <- subset(secondary, gene == g)
+			explained <- c(as.character(secondPeak$snps), 
+					unlist(strsplit(as.character(secondPeak$others), ",")))
+			candidates <- subset(candidates, !(gene == g & snps %in% explained))
+			peak <- subset(hits, snps %in% secondPeak$snps & gene == g)
+			peak$others <- secondPeak$others
+			peak$Rsquared <- secondPeak$Rsquared
+			peak$finalPvalue <- secondPeak$pvalue
+			candidates <- rbind(candidates, peak)
+			
 		}
-		candidates <- rbind(candidates, secondary)
+		
 		depth <- depth+1
 	}
 	
@@ -111,7 +118,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 			}
 	)
 	names(snps) <- unique(hits$snps)
-	secondary <- peakUpdate <- data.frame(snps=character(), gene=character(), 
+	secondaryPeak <- peakUpdate <- primary <- data.frame(snps=character(), gene=character(), 
 			statistic=numeric(), pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
 	peakUpdate$secondary <- character()
 	## Fit model including peak SNP and one other candidate
@@ -142,9 +149,8 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 			}
 		}
 	}
-	if(nrow(ans)){
-		secondary <- me1$all$eqtls[order(me1$all$eqtls$pvalue),]
-		primary <-subset(peakUpdate, secondary == secondary$snps[1])
-	}
-	list(primary=primary, secondary=secondary)
+	secondaryPeak <- me1$all$eqtls[order(me1$all$eqtls$pvalue),]
+	primary <-subset(peakUpdate, secondary == as.character(secondaryPeak$snps[1]))
+	
+	list(primary=primary, secondary=secondaryPeak)
 }
