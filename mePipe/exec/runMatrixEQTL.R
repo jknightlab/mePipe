@@ -595,7 +595,7 @@ if(opt$multiPeak){
 				subPC$CreateFromMatrix(pc[[1]])
 				transCovariates <- c(subPC, covariates)
 			}
-			multi$trans <- getMultiPeak(me$trans$eqtls, opt$multiPvalue, 
+			multi <- getMultiPeak(me$trans$eqtls, opt$multiPvalue, 
 					arguments$args[1], arguments$arg[2], transCovariates, opt$ldFDR,
 					opt$ldR2, fileOptions, fileOptions, fileOptions, 
 					error=opt$error, model=opt$model)
