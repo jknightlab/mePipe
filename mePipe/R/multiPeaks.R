@@ -85,7 +85,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 				packages=.getPackageNames())
 		candidates <- Reduce(rbind, lapply(update, '[[', "candidates"))
 		depth <- depth + 1
-}
+	}
 	if(!missing(output)){
 		write.table(ldTable, file=paste0(output, "_LDtable"), row.names=FALSE,
 				quote=FALSE, sep="\t")
