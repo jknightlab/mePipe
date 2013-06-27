@@ -70,11 +70,12 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		ans <- Rsge::sge.parLapply(unique(as.character(candidates$gene)), .submitMultiPeak, 
 				candidates,	depth, pvalue, gene, snps, cvrt, ..., packages=.getPackageNames())
 		primary <- lapply(ans, '[[', "primary")
-		names(primary) <- unique(as.character(candidates$gene))
 		secondaryLD <- lapply(ans, function(x) getLDpairs(x$secondary, snps, minR=minR, minFDR=1))
+		rm(ans)
+		names(primary) <- unique(as.character(candidates$gene))
 		secondary <- lapply(secondaryLD, '[[', "groups")
 		names(secondary) <- unique(as.character(candidates$gene))
-		ldTable <- rbind(ldTable, Reduce(rbind, lapply(secondaryLD, '[[',  "proxies")))
+		ldTable <- do.call("rbind", c(list(ldTable), lapply(secondaryLD, '[[',  "proxies")))
 		rm(secondaryLD)
 		
 		## update candidates
