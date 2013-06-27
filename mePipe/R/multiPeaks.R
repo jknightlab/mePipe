@@ -67,10 +67,14 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 				subset(candidates, gene %in% names(snpCount)[snpCount <= depth]))
 		candidates <- subset(candidates, !gene %in% complete$gene)
 		if(nrow(candidates) == 0) break
+		message("Starting multi-peak computations ....")
 		ans <- Rsge::sge.parLapply(unique(as.character(candidates$gene)), .submitMultiPeak, 
 				candidates,	depth, pvalue, gene, snps, cvrt, ..., packages=.getPackageNames())
+		message("completed multi-peak computations")
 		primary <- lapply(ans, '[[', "primary")
+		message("computing pairwise LD for new peaks...")
 		secondaryLD <- lapply(ans, function(x) getLDpairs(x$secondary, snps, minR=minR, minFDR=1))
+		message("finished LD computations")
 		rm(ans)
 		names(primary) <- unique(as.character(candidates$gene))
 		secondary <- lapply(secondaryLD, '[[', "groups")
@@ -79,11 +83,13 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		rm(secondaryLD)
 		
 		## update candidates
+		message("updating...")
 		update <- Rsge::sge.parLapply(unique(as.character(candidates$gene)), .submitMultiUpdate,
 				primary=primary, secondary=secondary, candidates=candidates, 
 				snps=snps, hits=hits, ldTable=ldTable,
 				packages=.getPackageNames())
-		candidates <- Reduce(rbind, lapply(update, '[[', "candidates"))
+		message("update complete")
+		candidates <- do.call("rbind", lapply(update, '[[', "candidates"))
 		depth <- depth + 1
 	}
 	if(!missing(output)){

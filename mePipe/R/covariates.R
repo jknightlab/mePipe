@@ -160,7 +160,7 @@ loadCovariates <- function(files, options = getOptions()){
 	cvrt <- lapply(files, 
 			function(f, opt) if(is(f, "SlicedData")) f else loadData(f, opt), 
 			options)
-	Reduce(combineSlicedData, cvrt)
+	do.call(combineSlicedData, cvrt)
 }
 
 #' Combine two \code{SlicedData} objects
@@ -169,9 +169,9 @@ loadCovariates <- function(files, options = getOptions()){
 #' @return A \code{SlicedData} object containg the data from \code{x} and \code{y}
 #' 
 #' @author Peter Humburg
-combineSlicedData <- function(x, y){
+combineSlicedData <- function(...){
 	ans <- SlicedData$new()
-	ans$CreateFromMatrix(rbind(as.matrix(x), as.matrix(y)))
+	ans$CreateFromMatrix(do.call(rbind, lapply(list(...), as.matrix)))
 }
 
 #' Determine the optimal number of covariates.

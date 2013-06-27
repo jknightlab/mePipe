@@ -244,10 +244,12 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 		ans <- sge.parLapply(genes, .submitLDpairs, eqtls=eqtls, geno=geno, maxP=maxP, 
 				minR=minR, progressBar=pb, njobs=length(genes), 
 				packages=.getPackageNames())
-		close(pb)
+		if(!sge.getOption("sge.use.cluster")){
+			close(pb)
+		}
 	}
-	ans$groups <- Reduce(rbind, lapply(ans, "[[", "groups"))
-	ans$proxies <- Reduce(rbind, lapply(ans, "[[", "proxies"))
+	ans$groups <- do.call("rbind", lapply(ans, "[[", "groups"))
+	ans$proxies <- do.call("rbind", lapply(ans, "[[", "proxies"))
 	ans$proxies <- subset(ans$proxies, !duplicated(ans$proxies[,1:2]))
 	ans
 }
