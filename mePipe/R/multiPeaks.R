@@ -124,7 +124,8 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 			tmpdir=".", fileext=".tmp")
 	tmpCov <- Reduce(combineSlicedData, c(covariate, snps[1:depth]))
 	me1 <- runME(expression, Reduce(combineSlicedData, snps[-(1:depth)]), 
-			tmpCov, output=tmp1, threshold=pvalue, cisThreshold=0, cis=0, ...)
+			tmpCov, output=tmp1, threshold=pvalue, cisThreshold=0, cis=0, 
+			cluster=FALSE, ...)
 	unlink(paste0(tmp1, "*"))
 	if(nrow(me1$all$eqtls)){
 		snps <- c(snps[1:depth] , snps[as.character(me1$all$eqtls$snps)])
@@ -135,7 +136,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 						tmpdir=".", fileext=".tmp")
 				tmpCov <- Reduce(combineSlicedData, c(covariate, snps[c((1:depth)[-j], i)]))
 				me2 <- runME(expression, snps[[j]], tmpCov, output=tmp2, threshold=1, 
-						cisThreshold=0, cis=0, ...)
+						cisThreshold=0, cis=0, cluster=FALSE, ...)
 				if(me2$all$eqtls$pvalue > pvalue){
 					warning("Peak SNP ", hits$snps[j], 
 							" is not significant at requested significance threshold of ", pvalue)

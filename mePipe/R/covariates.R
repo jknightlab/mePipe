@@ -98,7 +98,8 @@ covAssoc <- function(genotype, covariate, otherCov, output, covOut, genoOpt = ge
 .submitCovAssoc <- function(covariate, genotype, output, covOpt, genoOpt, threshold, model, 
 		exclude, otherCov, covOut) {
 	me <- runME(covariate, genotype, output = output, exprOpt=covOpt,
-			genoOpt = genoOpt, threshold = threshold, model = model, cis = -1)
+			genoOpt = genoOpt, threshold = threshold, model = model, cis = -1, 
+			cluster=FALSE)
 	assoc <- unique(as.character(me$all$eqtls$gene[me$all$eqtls$FDR <= exclude]))
 	
 	## identify automatically generated (PCA) covariates that are correlated with
@@ -109,7 +110,8 @@ covAssoc <- function(genotype, covariate, otherCov, output, covOut, genoOpt = ge
 					". Using ", sQuote("linear"), " instead.")
 		}
 		me <- runME(covariate, loadCovariates(otherCov), output = output, exprOpt=covOpt,
-				genoOpt = genoOpt, threshold = threshold, model = "linear", cis = -1)
+				genoOpt = genoOpt, threshold = threshold, model = "linear", cis = -1,
+				cluster=FALSE)
 	}
 	assoc <- c(assoc, unique(as.character(me$all$eqtls$gene[me$all$eqtls$FDR <= exclude])))
 	
@@ -289,7 +291,8 @@ chooseCov <- function(expression, genotype, covariate, candidates = seq(5, 50, b
 		}
 	}
 	me <- runME(expression, genotype, selectedCov,
-			output=file.path(output, paste("me_", n, "_covariates.eQTL", sep="")), ...)
+			output=file.path(output, paste("me_", n, "_covariates.eQTL", sep="")), 
+			cluster=FALSE, ...)
 	count <- c(all=0, cis=0, trans=0)
 	fullCount <- c(all=0, cis=0, trans=0)
 	if(!is.null(me$all$eqtls)){

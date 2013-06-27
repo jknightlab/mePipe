@@ -32,7 +32,7 @@ runME <- function(expression, genotype, covariate, error, snpsPos, genePos,
 		output="", cisOutput=paste(output, "cis", sep="."), 
 		exprOpt=getOptions(), genoOpt=getOptions(),	covOpt=getOptions(), 
 		threshold=1e-5, cisThreshold=1e-3, model=c('linear', 'anova', 'cross'), cis=1e6, bins=0, 
-		verbose=FALSE, qqplot=FALSE){
+		verbose=FALSE, qqplot=FALSE, cluster=sge.getOption("sge.use.cluster")){
 	model <- match.arg(model)
 	model <- switch(model,
 			linear = modelLINEAR,
@@ -48,7 +48,7 @@ runME <- function(expression, genotype, covariate, error, snpsPos, genePos,
 	}
 	if(cis < 0) cisThreshold <- 0
 	
-	if(!is.null(sge.getOption("sge.use.cluster")) && sge.getOption("sge.use.cluster")){
+	if(!is.null(cluster) && cluster){
 		Rsge::sge.run(.submitRunME, error = error, expression = expression, exprOpt = exprOpt, 
 				genotype = genotype, genoOpt = genoOpt, covariate = covariate, covOpt=covOpt,
 				combineSlicedData = combineSlicedData, cis = cis, snpsPos = snpsPos, 
