@@ -66,74 +66,22 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 				subset(candidates, gene %in% names(snpCount)[snpCount <= depth]))
 		candidates <- subset(candidates, !gene %in% complete$gene)
 		if(nrow(candidates) == 0) break
-		ans <- Rsge::sge.parLapply(unique(candidates$gene), .submitMultiPeak, candidates, 
+		ans <- Rsge::sge.parLapply(unique(as.character(candidates$gene)), .submitMultiPeak, candidates, 
 				depth, pvalue, gene, snps, cvrt, ...)
 		primary <- lapply(ans, '[[', "primary")
-		secondary <- Reduce(rbind, lapply(ans, '[[', "secondary"))
-		secondaryLD <- getLDpairs(secondary, snps, minR=minR, minFDR=1)
-		secondary <- secondaryLD$groups
-		ldTable <- rbind(ldTable, secondaryLD$proxies)
+		names(primary) <- unique(as.character(candidates$gene))
+		secondaryLD <- lapply(ans, function(x) getLDpairs(x$secondary, snps, minR=minR, minFDR=1))
+		secondary <- lapply(secondaryLD, '[[', "groups")
+		names(secondary) <- unique(as.character(candidates$gene))
+		ldTable <- rbind(ldTable, Reduce(rbind, lapply(secondaryLD, '[[',  "proxies")))
 		
 		## update candidates
-		for(p in primary){
-			idx <- which(candidates$snps == as.character(p$snps[1]) & 
-							candidates$gene == as.character(p$gene[1]))
-			candidates$finalPvalue[idx] <- p$pvalue[1]
-		}
-		if(!is.null(secondary) && nrow(secondary)){
-			for(g in unique(candidates$gene)){
-				secondPeak <- subset(secondary, gene == g)
-				explained <- c(as.character(secondPeak$snps), 
-						unlist(strsplit(as.character(secondPeak$others), ",")))
-				candidates <- subset(candidates, !(gene == g & snps %in% explained))
-				peak <- subset(hits, snps %in% secondPeak$snps & gene == g)
-				peak$others <- secondPeak$others
-				peak$Rsquared <- secondPeak$Rsquared
-				peak$finalPvalue <- secondPeak$pvalue
-				candidates <- rbind(candidates, peak)
-			}
-		} else {
-			for(g in unique(candidates$gene)){
-				remain <- subset(candidates, gene == g)
-				peaks <- subset(remain, !is.na(finalPvalue))
-				others <- subset(remain, is.na(finalPvalue))
-				if(nrow(peaks) == 0){
-					peaks <- others[1, ]
-					others <- others[-1,]
-				}
-				if(nrow(others)){
-					r2 <- sapply(as.character(others$snps), 
-							function(s, p, x){
-								tab <- subset(x, snp1 %in% p$snps & snp2==s)
-								tab <- tab[match(p$snps, tab$snp1),]
-								ans <- tab$Rsquared
-								ans
-							}, peaks, ldTable)
-					if(length(dim(r2)) == 0){
-						r2 <- matrix(r2, ncol=nrow(others))
-					}
-					idx <- apply(r2, 2, which.max)
-					for(i in 1:length(idx)){
-						candIdx <- which(candidates$gene == g & 
-										candidates$snps == peaks$snps[idx[i]])
-						base <- candidates[candIdx, ]
-						if(is.na(base$others)){
-							candidates$others[candIdx] <- as.character(others$snps[i])
-							candidates$Rsquared[candIdx] <- r2[idx[i], i] 
-						} else {
-							candidates$others[candIdx] <- paste(base$others[!is.na(base$others)], 
-									others$snps[i], sep=",")
-							candidates$Rsquared[candIdx] <- paste(base$Rsquared[!is.na(base$Rsquared)], 
-									r2[idx[i], i], sep=",")
-						}
-					}
-					exclude <- others$snps
-					candidates <- subset(candidates, !(gene == g & snps %in% exclude))
-				}
-			}
-		}
-		depth <- depth+1
-	}
+		update <- Rsge::sge.parLapply(unique(as.character(candidates$gene)), .submitMultiUpdate,
+				primary=primary, secondary=secondary, candidates=candidates, 
+				snps=snps, hits=hits,	ldTable=ldTable)
+		candidates <- Reduce(rbind, lapply(update, '[[', "candidates"))
+		depth <- depth + 1
+}
 	if(!missing(output)){
 		write.table(ldTable, file=paste0(output, "_LDtable"), row.names=FALSE,
 				quote=FALSE, sep="\t")
@@ -199,4 +147,75 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	primary <-subset(peakUpdate, secondary == as.character(secondaryPeak$snps[1]))
 	
 	list(primary=primary, secondary=secondaryPeak)
+}
+
+#' @author Peter Humburg
+#' @keywords internal
+.submitMultiUpdate <- function(g, primary, secondary, candidates, snps, hits, finalPvalue, ldTable) {
+	primary <- primary[[g]]
+	secondary <- secondary[[g]]
+	candidates <- subset(candidates, gene == g)
+	
+	idx <- which(candidates$snps == as.character(primary$snps[1]))
+	candidates$finalPvalue[idx] <- primary$pvalue[1]
+	
+	if(!is.null(secondary) && nrow(secondary)){
+		explained <- c(as.character(secondary$snps), 
+				unlist(strsplit(as.character(secondary$others), ",")))
+		peak <- subset(hits, snps %in% secondary$snps)
+		peak$others <- secondary$others
+		peak$Rsquared <- secondary$Rsquared
+		peak$finalPvalue <- secondary$pvalue
+		
+		for(i in 1:nrow(peak)){
+			candIdx <- match(as.character(peak$snps[i]), candidates$snps)
+			if(!is.na(candidates$others[candIdx])){
+				if(is.na(peak$others[i])){
+					peak$others[i] <- candidates$others[candIdx]
+					peak$Rsquared[i] <- candidates$Rsquared[candIdx]
+				} else{
+					peak$others[i] <- paste(candidates$others[candIdx], peak$others[i], sep=",")
+					peak$Rsquared[i] <- paste(candidates$Rsquared[candIdx], peak$Rsquared[i], sep=",")
+				}
+			}
+		}
+		candidates <- subset(candidates, !snps %in% explained)
+		candidates <- rbind(candidates, peak)
+	} else {
+		peaks <- subset(candidates, !is.na(finalPvalue))
+		others <- subset(candidates, is.na(finalPvalue))
+		if(nrow(peaks) == 0){
+			peaks <- others[1, ]
+			others <- others[-1,]
+		}
+		if(nrow(others)){
+			r2 <- sapply(as.character(others$snps), 
+					function(s, p, x){
+						tab <- subset(x, snp1 %in% p$snps & snp2==s)
+						tab <- tab[match(p$snps, tab$snp1),]
+						ans <- tab$Rsquared
+						ans
+					}, peaks, ldTable)
+			if(length(dim(r2)) == 0){
+				r2 <- matrix(r2, ncol=nrow(others))
+			}
+			idx <- apply(r2, 2, which.max)
+			for(i in 1:length(idx)){
+				candIdx <- which(candidates$snps == peaks$snps[idx[i]])
+				base <- candidates[candIdx, ]
+				if(is.na(base$others)){
+					candidates$others[candIdx] <- as.character(others$snps[i])
+					candidates$Rsquared[candIdx] <- r2[idx[i], i] 
+				} else {
+					candidates$others[candIdx] <- paste(base$others[!is.na(base$others)], 
+							others$snps[i], sep=",")
+					candidates$Rsquared[candIdx] <- paste(base$Rsquared[!is.na(base$Rsquared)], 
+							r2[idx[i], i], sep=",")
+				}
+			}
+			exclude <- others$snps
+			candidates <- subset(candidates, !snps %in% exclude)
+		}
+	}
+	list(candidates=candidates)
 }
