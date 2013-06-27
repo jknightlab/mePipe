@@ -27,13 +27,7 @@ allCovariates <- function(expression, exprOpt = getOptions(), output, sep = "\t"
 
 #' @author Peter Humburg
 .submitAllCovariates <- function(exprOpt, expression, output, sep) {
-	gene <- SlicedData$new()
-	gene$fileDelimiter <- exprOpt$sep
-	gene$fileOmitCharacters = exprOpt$missing
-	gene$fileSkipRows = exprOpt$rowskip
-	gene$fileSkipColumns = exprOpt$colskip
-	gene$fileSliceSize = exprOpt$slice
-	gene$LoadFile(expression)
+	gene <- loadData(expression, exprOpt)
 	gene$SetNanRowMean()
 	
 	## combine into one big matrix for PCA
