@@ -54,7 +54,8 @@ runME <- function(expression, genotype, covariate, error, snpsPos, genePos,
 				combineSlicedData = combineSlicedData, cis = cis, snpsPos = snpsPos, 
 				genePos = genePos, output = output, threshold = threshold, model = model, 
 				verbose = verbose, cisOutput = cisOutput, cisThreshold = cisThreshold, 
-				bins = bins, qqplot = qqplot)
+				bins = bins, qqplot = qqplot, 
+				packages=.getPackageNames())
 	} else{
 		.submitRunME(error=error, expression=expression, exprOpt=exprOpt, genotype=genotype, 
 				genoOpt=genoOpt, covariate=covariate, covOpt=covOpt, 

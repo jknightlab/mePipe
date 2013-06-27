@@ -56,3 +56,9 @@ loadData <- function(file, options){
 	
 	data
 }
+
+#' @author Peter Humburg
+#' @keywords internal
+.getPackageNames <- function(){
+	c("base", "stats", "utils","methods","MatrixEQTL", "Rsge")
+}

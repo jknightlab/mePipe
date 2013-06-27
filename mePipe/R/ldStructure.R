@@ -52,7 +52,8 @@ getLDblocks <- function(eqtls, genotype, pos, dist=500, window=200,
 		chroms <- unique(as.character(pos[rownames(pos) %in% eqtls$snps, "chrom"]))
 		ans <- Rsge::sge.parLapply(chroms, .submitLDblocks, genoOpt=genoOpt, 
 				genotype=genotype, eqtls=eqtls,	verbose=verbose, pos=pos, dist=dist, 
-				window=window, minFDR=minFDR, njobs=length(unique(pos$chrom)))
+				window=window, minFDR=minFDR, njobs=length(unique(pos$chrom)),
+				packages=.getPackageNames())
 		ans <- Reduce(rbind, ans)
 		
 		ans[order(ans$pvalue),]
@@ -242,7 +243,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 		pb <- txtProgressBar(min=0, max=length(genes), initial=NA, file=stderr(), style=3)
 		ans <- sge.parLapply(genes, .submitLDpairs, eqtls=eqtls, geno=geno, maxP=maxP, 
 				minR=minR, progressBar=pb, njobs=length(genes), 
-				packages=c("methods","MatrixEQTL"))
+				packages=.getPackageNames())
 		close(pb)
 	}
 	ans$groups <- Reduce(rbind, lapply(ans, "[[", "groups"))
