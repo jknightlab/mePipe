@@ -151,7 +151,9 @@ if(!is.null(opt$interaction)){
 	}
 	opt$model <- "cross"
 }
-
+if(opt$ldPairs && opt$multiPeak){
+	opt$ldPairs <- FALSE
+}
 
 ## if we are going to produce a Q-Q plot we need to adjust the bins
 if(opt$qqplot && opt$bins > 0){
@@ -559,7 +561,7 @@ if(opt$multiPeak){
 		}
 		multi <- getMultiPeak(me$all$eqtls, opt$multiPvalue, 
 				arguments$args[1], arguments$arg[2], allCovariates, opt$ldFDR,
-				opt$ldR2, fileOptions, fileOptions, fileOptions, 
+				opt$ldR2, fileOptions, fileOptions, fileOptions, output=opt$output, 
 				error=opt$error, model=opt$model)
 		write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
 				quote=FALSE, sep="\t")
@@ -578,7 +580,7 @@ if(opt$multiPeak){
 			}
 			multi <- getMultiPeak(me$cis$eqtls, opt$multiPvalue, 
 					arguments$args[1], arguments$arg[2], cisCovariates, opt$ldFDR,
-					opt$ldR2, fileOptions, fileOptions, fileOptions, 
+					opt$ldR2, fileOptions, fileOptions, fileOptions, output=opt$output, 
 					error=opt$error, model=opt$model)
 			write.table(multi, file=paste(opt$cisoutput, "peaks", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")
@@ -597,7 +599,7 @@ if(opt$multiPeak){
 			}
 			multi <- getMultiPeak(me$trans$eqtls, opt$multiPvalue, 
 					arguments$args[1], arguments$arg[2], transCovariates, opt$ldFDR,
-					opt$ldR2, fileOptions, fileOptions, fileOptions, 
+					opt$ldR2, fileOptions, fileOptions, fileOptions, output=opt$output, 
 					error=opt$error, model=opt$model)
 			write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")

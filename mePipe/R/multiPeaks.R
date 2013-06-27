@@ -27,7 +27,7 @@
 #' @author Peter Humburg
 #' @export
 getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, minFDR,
-		minR, exprOpt=getOptions(), genoOpt=getOptions(), covOpt=getOptions(), ...){
+		minR, exprOpt=getOptions(), genoOpt=getOptions(), covOpt=getOptions(), output, ...){
 	## create data objects
 	## gene expression
 	gene <- NULL
@@ -134,7 +134,10 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		}
 		depth <- depth+1
 	}
-	
+	if(!missing(output)){
+		write.table(ldTable, file=paste0(output, "_LDtable"), row.names=FALSE,
+				quote=FALSE, sep="\t")
+	}
 	## TODO: update FDR estimates
 	
 	complete
