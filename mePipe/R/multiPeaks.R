@@ -67,9 +67,8 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 				subset(candidates, gene %in% names(snpCount)[snpCount <= depth]))
 		candidates <- subset(candidates, !gene %in% complete$gene)
 		if(nrow(candidates) == 0) break
-		ans <- Rsge::sge.parLapply(unique(as.character(candidates$gene)), .submitMultiPeak, candidates, 
-				depth, pvalue, gene, snps, cvrt, ..., 
-				packages=.getPackageNames())
+		ans <- Rsge::sge.parLapply(unique(as.character(candidates$gene)), .submitMultiPeak, 
+				candidates,	depth, pvalue, gene, snps, cvrt, ..., packages=.getPackageNames())
 		primary <- lapply(ans, '[[', "primary")
 		names(primary) <- unique(as.character(candidates$gene))
 		secondaryLD <- lapply(ans, function(x) getLDpairs(x$secondary, snps, minR=minR, minFDR=1))
