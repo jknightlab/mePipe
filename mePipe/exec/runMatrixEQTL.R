@@ -550,7 +550,7 @@ if(opt$multiPeak){
 	if(doAll){
 		message("Resolving multiple peaks...")
 		allCovariates <- covariates
-		if(me$all$covariates > 0){
+		if(!is.null(me$all$covariates) && me$all$covariates > 0){
 			pc <- loadData(covInput, 
 					getOptions(sep = opt$delim, missing = opt$missing, 
 							rowskip = opt$rowskip, colskip = opt$colskip, 
@@ -569,7 +569,7 @@ if(opt$multiPeak){
 		if(doCis){
 			message("Resolving multiple peaks for cis associations...")
 			cisCovariates <- covariates
-			if(me$cis$covariates > 0){
+			if(!is.null(me$cis$covariates) && me$cis$covariates > 0){
 				pc <- loadData(covInput, 
 						getOptions(sep = opt$delim, missing = opt$missing, 
 								rowskip = opt$rowskip, colskip = opt$colskip, 
@@ -588,7 +588,7 @@ if(opt$multiPeak){
 		if(doTrans){
 			message("Resolving multiple peaks for trans-associations...")
 			transCovariates <- covariates
-			if(me$trans$covariates > 0){
+			if(!is.null(me$trans$covariates) && me$trans$covariates > 0){
 				pc <- loadData(covInput, 
 						getOptions(sep = opt$delim, missing = opt$missing, 
 								rowskip = opt$rowskip, colskip = opt$colskip, 
