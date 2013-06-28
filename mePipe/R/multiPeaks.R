@@ -132,9 +132,8 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		rm(secondaryLD)
 		
 		## update candidates
-		hits <- .submitMultiUpdate(current,
-				primary=primary, secondary=secondaryPeak, candidates=hits, 
-				snps=snps, hits=hits, ldTable=ldTable)
+		hits <- .submitMultiUpdate(primary=primary, secondary=secondaryPeak, 
+				candidates=hits, snps=snps, ldTable=ldTable)
 		depth <- depth + 1
 	}
 	hits
@@ -142,18 +141,14 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 
 #' @author Peter Humburg
 #' @keywords internal
-.submitMultiUpdate <- function(g, primary, secondary, candidates, snps, hits, finalPvalue, ldTable) {
-	primary <- primary[[g]]
-	secondary <- secondary[[g]]
-	candidates <- subset(candidates, gene == g)
-	
+.submitMultiUpdate <- function(primary, secondary, candidates, snps, finalPvalue, ldTable) {
 	idx <- which(candidates$snps == as.character(primary$snps[1]))
 	candidates$finalPvalue[idx] <- primary$pvalue[1]
 	
 	if(!is.null(secondary) && nrow(secondary)){
 		explained <- c(as.character(secondary$snps), 
 				unlist(strsplit(as.character(secondary$others), ",")))
-		peak <- subset(hits, snps %in% secondary$snps)
+		peak <- subset(candidates, snps %in% secondary$snps)
 		peak$others <- secondary$others
 		peak$Rsquared <- secondary$Rsquared
 		peak$finalPvalue <- secondary$pvalue
