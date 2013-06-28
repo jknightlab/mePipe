@@ -52,44 +52,11 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		}
 	}
 	
-	depth <- 1
-	hitsLD <- getLDpairs(hits, snps, minR=minR, minFDR=minFDR)
-	hits <- hitsLD$groups
-	ldTable <- hitsLD$proxies
-	rm(hitsLD)
-	candidates <- hits
-	candidates$finalPvalue <- as.numeric(NA)
-	complete <- subset(candidates, FALSE)
-	repeat{
-		## only proceed with genes that have more than one SNP associated with them
-		snpCount <- table(candidates$gene)
-		complete <- rbind(complete, 
-				subset(candidates, gene %in% names(snpCount)[snpCount <= depth]))
-		candidates <- subset(candidates, !gene %in% complete$gene)
-		if(nrow(candidates) == 0) break
-		ans <- Rsge::sge.parLapply(unique(as.character(candidates$gene)), .submitMultiPeak, 
-				candidates,	depth, pvalue, gene, snps, cvrt, ..., packages=.getPackageNames())
-		primary <- lapply(ans, '[[', "primary")
-		secondaryLD <- lapply(ans, function(x) getLDpairs(x$secondary, snps, minR=minR, minFDR=1))
-		rm(ans)
-		names(primary) <- unique(as.character(candidates$gene))
-		secondary <- lapply(secondaryLD, '[[', "groups")
-		names(secondary) <- unique(as.character(candidates$gene))
-		ldTable <- do.call("rbind", c(list(ldTable), lapply(secondaryLD, '[[',  "proxies")))
-		rm(secondaryLD)
-		
-		## update candidates
-		update <- Rsge::sge.parLapply(unique(as.character(candidates$gene)), .submitMultiUpdate,
-				primary=primary, secondary=secondary, candidates=candidates, 
-				snps=snps, hits=hits, ldTable=ldTable,
-				packages=.getPackageNames())
-		candidates <- do.call("rbind", lapply(update, '[[', "candidates"))
-		depth <- depth + 1
-	}
-	if(!missing(output)){
-		write.table(ldTable, file=paste0(output, "_LDtable"), row.names=FALSE,
-				quote=FALSE, sep="\t")
-	}
+	complete <- Rsge::sge.parLapply(unique(as.character(hits$gene)), hits, pvalue,
+			gene, snps, cvrt, minR, minFDR, ...)
+	
+	complete <- do.call(rbind, complete)
+	complete <- complete[order(complete$pvalue), ]
 	## TODO: update FDR estimates
 	
 	complete
@@ -97,61 +64,87 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 
 #' @author Peter Humburg
 #' @keywords internal
-.submitMultiPeak <- function(current, hits, depth, pvalue, expression, genotype, covariate, ...){
+.submitMultiPeak <- function(current, hits, pvalue, expression, genotype, covariate, 
+		minR, minFDR, ...){
 	hits <- subset(hits, gene == current)
+	
+	depth <- 1
+	hitsLD <- getLDpairs(hits, snps, minR=minR, minFDR=minFDR, cluster=FALSE)
+	hits <- hitsLD$groups
+	ldTable <- hitsLD$proxies
+	rm(hitsLD)
+	candidates <- hits
+	candidates$finalPvalue <- as.numeric(NA)
+	complete <- subset(candidates, FALSE)
 	
 	## restrict gene expression data to current gene
 	tmpExpr <- SlicedData$new()
 	tmpExpr$CreateFromMatrix(expression$FindRow(current)$row)
 	expression <- tmpExpr
 	
-	ans <- data.frame(snps=character(), gene=character(), statistic=numeric(), 
-			pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
-	
-	## extract all candidate SNPs (including primary peak)
-	snps <- lapply(unique(hits$snps), function(x){
-				ans <- SlicedData$new()
-				ans$CreateFromMatrix(genotype$FindRow(x)$row)
-				ans
-			}
-	)
-	names(snps) <- unique(hits$snps)
-	secondaryPeak <- peakUpdate <- primary <- data.frame(snps=character(), gene=character(), 
-			statistic=numeric(), pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
-	peakUpdate$secondary <- character()
-	## Fit model including peak SNP and one other candidate
-	tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
-			tmpdir=".", fileext=".tmp")
-	tmpCov <- Reduce(combineSlicedData, c(covariate, snps[1:depth]))
-	me1 <- runME(expression, Reduce(combineSlicedData, snps[-(1:depth)]), 
-			tmpCov, output=tmp1, threshold=pvalue, cisThreshold=0, cis=0, 
-			cluster=FALSE, ...)
-	unlink(paste0(tmp1, "*"))
-	if(nrow(me1$all$eqtls)){
-		snps <- c(snps[1:depth] , snps[as.character(me1$all$eqtls$snps)])
-		for(i in (depth+1):length(snps)){
-			for(j in 1:depth){
-				tmp2 <- tempfile(pattern=paste(current, hits$snps[i], paste(hits$snps[j], 
-										collapse="_"), "", sep="_"), 
-						tmpdir=".", fileext=".tmp")
-				tmpCov <- Reduce(combineSlicedData, c(covariate, snps[c((1:depth)[-j], i)]))
-				me2 <- runME(expression, snps[[j]], tmpCov, output=tmp2, threshold=1, 
-						cisThreshold=0, cis=0, cluster=FALSE, ...)
-				if(me2$all$eqtls$pvalue > pvalue){
-					warning("Peak SNP ", hits$snps[j], 
-							" is not significant at requested significance threshold of ", pvalue)
+	repeat{
+		## only proceed with genes that have more than one SNP associated with them
+		snpCount <- table(candidates$gene)
+		complete <- rbind(complete, 
+				subset(candidates, gene %in% names(snpCount)[snpCount <= depth]))
+		candidates <- subset(candidates, !gene %in% complete$gene)
+		if(nrow(candidates) == 0) break
+		
+		## extract all candidate SNPs (including primary peak)
+		snps <- lapply(unique(hits$snps), function(x){
+					ans <- SlicedData$new()
+					ans$CreateFromMatrix(genotype$FindRow(x)$row)
+					ans
 				}
-				eqtls <- me2$all$eqtls
-				eqtls$secondary <- hits$snps[i]
-				peakUpdate <- rbind(peakUpdate, eqtls)
-				unlink(paste0(tmp2, "*"))
+		)
+		names(snps) <- unique(hits$snps)
+		secondaryPeak <- peakUpdate <- primary <- data.frame(snps=character(), gene=character(), 
+				statistic=numeric(), pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
+		peakUpdate$secondary <- character()
+		## Fit model including peak SNP and one other candidate
+		tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
+				tmpdir=".", fileext=".tmp")
+		tmpCov <- Reduce(combineSlicedData, c(covariate, snps[1:depth]))
+		me1 <- runME(expression, Reduce(combineSlicedData, snps[-(1:depth)]), 
+				tmpCov, output=tmp1, threshold=pvalue, cisThreshold=0, cis=0, 
+				cluster=FALSE, ...)
+		unlink(paste0(tmp1, "*"))
+		if(nrow(me1$all$eqtls)){
+			snps <- c(snps[1:depth] , snps[as.character(me1$all$eqtls$snps)])
+			for(i in (depth+1):length(snps)){
+				for(j in 1:depth){
+					tmp2 <- tempfile(pattern=paste(current, hits$snps[i], paste(hits$snps[j], 
+											collapse="_"), "", sep="_"), 
+							tmpdir=".", fileext=".tmp")
+					tmpCov <- Reduce(combineSlicedData, c(covariate, snps[c((1:depth)[-j], i)]))
+					me2 <- runME(expression, snps[[j]], tmpCov, output=tmp2, threshold=1, 
+							cisThreshold=0, cis=0, cluster=FALSE, ...)
+					if(me2$all$eqtls$pvalue > pvalue){
+						warning("Peak SNP ", hits$snps[j], 
+								" is not significant at requested significance threshold of ", pvalue)
+					}
+					eqtls <- me2$all$eqtls
+					eqtls$secondary <- hits$snps[i]
+					peakUpdate <- rbind(peakUpdate, eqtls)
+					unlink(paste0(tmp2, "*"))
+				}
 			}
 		}
+		secondaryPeak <- me1$all$eqtls[order(me1$all$eqtls$pvalue),]
+		primary <-subset(peakUpdate, secondary == as.character(secondaryPeak$snps[1]))
+		
+		secondaryLD <- getLDpairs(secondaryPeak, snps, minR=minR, minFDR=1, cluster=FALSE)
+		secondary <- secondaryLD$groups
+		ldTable <- rbind(ldTable, secondaryLD$proxies)
+		rm(secondaryLD)
+		
+		## update candidates
+		candidates <- .submitMultiUpdate(current,
+				primary=primary, secondary=secondary, candidates=candidates, 
+				snps=snps, hits=hits, ldTable=ldTable)
+		depth <- depth + 1
 	}
-	secondaryPeak <- me1$all$eqtls[order(me1$all$eqtls$pvalue),]
-	primary <-subset(peakUpdate, secondary == as.character(secondaryPeak$snps[1]))
-	
-	list(primary=primary, secondary=secondaryPeak)
+	complete
 }
 
 #' @author Peter Humburg
@@ -222,5 +215,5 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 			candidates <- subset(candidates, !snps %in% exclude)
 		}
 	}
-	list(candidates=candidates)
+	candidates
 }
