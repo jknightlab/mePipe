@@ -52,8 +52,8 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		}
 	}
 	
-	complete <- Rsge::sge.parLapply(unique(as.character(hits$gene)), hits, pvalue,
-			gene, snps, cvrt, minR, minFDR, ...)
+	complete <- Rsge::sge.parLapply(unique(as.character(hits$gene)), .submitMultiPeak, 
+			hits, pvalue, gene, snps, cvrt, minR, minFDR, ...)
 	
 	complete <- do.call(rbind, complete)
 	complete <- complete[order(complete$pvalue), ]
@@ -69,7 +69,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	hits <- subset(hits, gene == current)
 	
 	depth <- 1
-	hitsLD <- getLDpairs(hits, snps, minR=minR, minFDR=minFDR, cluster=FALSE)
+	hitsLD <- getLDpairs(hits, genotype, minR=minR, minFDR=minFDR, cluster=FALSE)
 	hits <- hitsLD$groups
 	ldTable <- hitsLD$proxies
 	rm(hitsLD)
@@ -105,7 +105,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
 				tmpdir=".", fileext=".tmp")
 		tmpCov <- Reduce(combineSlicedData, c(covariate, snps[1:depth]))
-		me1 <- runME(expression, Reduce(combineSlicedData, snps[-(1:depth)]), 
+		me1 <- runME(expression, do.call(combineSlicedData, snps[-(1:depth)]), 
 				tmpCov, output=tmp1, threshold=pvalue, cisThreshold=0, cis=0, 
 				cluster=FALSE, ...)
 		unlink(paste0(tmp1, "*"))
