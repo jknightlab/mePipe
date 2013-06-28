@@ -91,32 +91,32 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		if(nrow(candidates) == 0) break
 		
 		## extract all candidate SNPs (including primary peak)
-		snps <- lapply(unique(hits$snps), function(x){
+		geno <- lapply(unique(hits$snps), function(x){
 					ans <- SlicedData$new()
 					ans$CreateFromMatrix(genotype$FindRow(x)$row)
 					ans
 				}
 		)
-		names(snps) <- unique(hits$snps)
+		names(geno) <- unique(hits$snps)
 		secondaryPeak <- peakUpdate <- primary <- data.frame(snps=character(), gene=character(), 
 				statistic=numeric(), pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
 		peakUpdate$secondary <- character()
 		## Fit model including peak SNP and one other candidate
 		tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
 				tmpdir=".", fileext=".tmp")
-		tmpCov <- Reduce(combineSlicedData, c(covariate, snps[1:depth]))
-		me1 <- runME(expression, do.call(combineSlicedData, snps[-(1:depth)]), 
+		tmpCov <- do.call(combineSlicedData, c(covariate, geno[1:depth]))
+		me1 <- runME(expression, do.call(combineSlicedData, geno[-(1:depth)]), 
 				tmpCov, output=tmp1, threshold=pvalue, cisThreshold=0, cis=0, 
 				cluster=FALSE, ...)
 		unlink(paste0(tmp1, "*"))
 		if(nrow(me1$all$eqtls)){
-			snps <- c(snps[1:depth] , snps[as.character(me1$all$eqtls$snps)])
+			snps <- c(geno[1:depth] , geno[as.character(me1$all$eqtls$snps)])
 			for(i in (depth+1):length(snps)){
 				for(j in 1:depth){
 					tmp2 <- tempfile(pattern=paste(current, hits$snps[i], paste(hits$snps[j], 
 											collapse="_"), "", sep="_"), 
 							tmpdir=".", fileext=".tmp")
-					tmpCov <- Reduce(combineSlicedData, c(covariate, snps[c((1:depth)[-j], i)]))
+					tmpCov <- do.call(combineSlicedData, c(covariate, snps[c((1:depth)[-j], i)]))
 					me2 <- runME(expression, snps[[j]], tmpCov, output=tmp2, threshold=1, 
 							cisThreshold=0, cis=0, cluster=FALSE, ...)
 					if(me2$all$eqtls$pvalue > pvalue){
@@ -133,7 +133,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		secondaryPeak <- me1$all$eqtls[order(me1$all$eqtls$pvalue),]
 		primary <-subset(peakUpdate, secondary == as.character(secondaryPeak$snps[1]))
 		
-		secondaryLD <- getLDpairs(secondaryPeak, snps, minR=minR, minFDR=1, cluster=FALSE)
+		secondaryLD <- getLDpairs(secondaryPeak, geno, minR=minR, minFDR=1, cluster=FALSE)
 		secondary <- secondaryLD$groups
 		ldTable <- rbind(ldTable, secondaryLD$proxies)
 		rm(secondaryLD)
