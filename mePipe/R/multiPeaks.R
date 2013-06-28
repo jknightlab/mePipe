@@ -73,34 +73,27 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	hits <- hitsLD$groups
 	ldTable <- hitsLD$proxies
 	rm(hitsLD)
-	candidates <- hits
-	candidates$finalPvalue <- as.numeric(NA)
-	complete <- subset(candidates, FALSE)
+	hits$finalPvalue <- as.numeric(NA)
 	
 	## restrict gene expression data to current gene
 	tmpExpr <- SlicedData$new()
 	tmpExpr$CreateFromMatrix(expression$FindRow(current)$row)
 	expression <- tmpExpr
 	
-	repeat{
-		## only proceed with genes that have more than one SNP associated with them
-		snpCount <- table(candidates$gene)
-		complete <- rbind(complete, 
-				subset(candidates, gene %in% names(snpCount)[snpCount <= depth]))
-		candidates <- subset(candidates, !gene %in% complete$gene)
-		if(nrow(candidates) == 0) break
-		
-		## extract all candidate SNPs (including primary peak)
-		geno <- lapply(unique(hits$snps), function(x){
-					ans <- SlicedData$new()
-					ans$CreateFromMatrix(genotype$FindRow(x)$row)
-					ans
-				}
-		)
-		names(geno) <- unique(hits$snps)
-		secondaryPeak <- peakUpdate <- primary <- data.frame(snps=character(), gene=character(), 
+	## extract all candidate SNPs (including primary peak)
+	geno <- lapply(unique(hits$snps), function(x){
+				ans <- SlicedData$new()
+				ans$CreateFromMatrix(genotype$FindRow(x)$row)
+				ans
+			}
+	)
+	names(geno) <- unique(hits$snps)
+	
+	while(nrow(hits) > depth){
+		peakUpdate <- data.frame(snps=character(), gene=character(), 
 				statistic=numeric(), pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
 		peakUpdate$secondary <- character()
+		
 		## Fit model including peak SNP and one other candidate
 		tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
 				tmpdir=".", fileext=".tmp")
@@ -133,18 +126,18 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		secondaryPeak <- me1$all$eqtls[order(me1$all$eqtls$pvalue),]
 		primary <-subset(peakUpdate, secondary == as.character(secondaryPeak$snps[1]))
 		
-		secondaryLD <- getLDpairs(secondaryPeak, geno, minR=minR, minFDR=1, cluster=FALSE)
-		secondary <- secondaryLD$groups
+		secondaryLD <- getLDpairs(secondaryPeak, genotype, minR=minR, minFDR=1, cluster=FALSE)
+		secondaryPeak <- secondaryLD$groups
 		ldTable <- rbind(ldTable, secondaryLD$proxies)
 		rm(secondaryLD)
 		
 		## update candidates
-		candidates <- .submitMultiUpdate(current,
-				primary=primary, secondary=secondary, candidates=candidates, 
+		hits <- .submitMultiUpdate(current,
+				primary=primary, secondary=secondaryPeak, candidates=hits, 
 				snps=snps, hits=hits, ldTable=ldTable)
 		depth <- depth + 1
 	}
-	complete
+	hits
 }
 
 #' @author Peter Humburg
