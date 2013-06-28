@@ -198,6 +198,7 @@ ldBlock <- function(snp, geno, pos, dist=500, window=200, ...){
 #' in significant LD. 
 #' @param minR Minimum R-squared at which two eSNPs will be assumed to have no independent effect. 
 #' @param genoOpt List of options for reading of genotype data.
+#' @param cluster Logical indicating whether jobs should be submitted to SGE or run locally
 #' @note Unlike the raw Matrix-eQTL output all associations with an FDR below the threshold indicated
 #' by \code{minFDR} will be absent from the output produced by this function.
 #' @return A list with components
@@ -210,7 +211,8 @@ ldBlock <- function(snp, geno, pos, dist=500, window=200, ...){
 #' } 
 #' @author Peter Humburg
 #' @export
-getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOpt=getOptions()){
+getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOpt=getOptions(),
+		cluster=Rsge::sge.getOption("sge.use.cluster")){
 	## check inputs
 	if(!is(eqtls, "data.frame")){
 		stop("Argument ", sQuote("eqtls"), " has to be a ", dQuote("data.frame"))
@@ -243,7 +245,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 		pb <- txtProgressBar(min=0, max=length(genes), initial=NA, file=stderr(), style=3)
 		ans <- sge.parLapply(genes, .submitLDpairs, eqtls=eqtls, geno=geno, maxP=maxP, 
 				minR=minR, progressBar=pb, njobs=length(genes), 
-				packages=.getPackageNames())
+				packages=.getPackageNames(), cluster=cluster)
 		if(!sge.getOption("sge.use.cluster")){
 			close(pb)
 		}
