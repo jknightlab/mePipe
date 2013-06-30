@@ -98,10 +98,23 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
 				tmpdir=".", fileext=".tmp")
 		tmpCov <- do.call(combineSlicedData, c(covariate, geno[1:depth]))
-		me1 <- runME(expression, do.call(combineSlicedData, geno[-(1:depth)]), 
-				tmpCov, output=tmp1, threshold=pvalue, cisThreshold=0, cis=0, 
-				cluster=FALSE, ...)
-		unlink(paste0(tmp1, "*"))
+		tryCatch(
+				me1 <- runME(expression, do.call(combineSlicedData, geno[-(1:depth)]), 
+						tmpCov, output=tmp1, threshold=pvalue, cisThreshold=0, cis=0, 
+						cluster=FALSE, ...),
+				error=function(e){
+					if(grepl("Colinear", e$message)){
+						me1 <- list()
+						me1$all <- list()
+						me1$all$eqtls <- data.frame(snps=character(), gene=character(),
+								statistic=numeric(), pvalue=numeric(), FDR=numeric())
+					} else{
+						stop(e$message)
+					}
+				},
+				finally=unlink(paste0(tmp1, "*"))
+		)
+		
 		if(nrow(me1$all$eqtls)){
 			snps <- c(geno[1:depth] , geno[as.character(me1$all$eqtls$snps)])
 			for(i in (depth+1):length(snps)){
@@ -110,8 +123,20 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 											collapse="_"), "", sep="_"), 
 							tmpdir=".", fileext=".tmp")
 					tmpCov <- do.call(combineSlicedData, c(covariate, snps[c((1:depth)[-j], i)]))
+					tryCatch(
 					me2 <- runME(expression, snps[[j]], tmpCov, output=tmp2, threshold=1, 
-							cisThreshold=0, cis=0, cluster=FALSE, ...)
+							cisThreshold=0, cis=0, cluster=FALSE, ...),
+					error=function(e){
+						if(grepl("Colinear", e$message)){
+							me2 <- list()
+							me2$all <- list()
+							me2$all$eqtls <- data.frame(snps=character(), gene=character(),
+									statistic=numeric(), pvalue=numeric(), FDR=numeric())
+						}else{
+							stop(e$message)
+						}
+					},
+					finally=unlink(paste0(tmp2, "*")))
 					if(me2$all$eqtls$pvalue > pvalue){
 						me1$all$eqtls <- me1$all$eqtls[-i,]
 						next
@@ -119,7 +144,6 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 					eqtls <- me2$all$eqtls
 					eqtls$secondary <- hits$snps[i]
 					peakUpdate <- rbind(peakUpdate, eqtls)
-					unlink(paste0(tmp2, "*"))
 				}
 			}
 		}
@@ -146,27 +170,32 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	candidates$finalPvalue[idx] <- primary$pvalue[1]
 	
 	if(!is.null(secondary) && nrow(secondary)){
-		explained <- c(as.character(secondary$snps), 
-				unlist(strsplit(as.character(secondary$others), ",")))
+		explained <- as.character(secondary$snps)
+		if(!all(is.na(secondary$others))){
+			explained <- c(explained, 
+					unlist(strsplit(as.character(secondary$others), ",")[!is.na(secondary$others)]))
+		}
 		peak <- subset(candidates, snps %in% secondary$snps)
-		peak$others <- secondary$others
-		peak$Rsquared <- secondary$Rsquared
-		peak$finalPvalue <- secondary$pvalue
-		
-		for(i in 1:nrow(peak)){
-			candIdx <- match(as.character(peak$snps[i]), candidates$snps)
-			if(!is.na(candidates$others[candIdx])){
-				if(is.na(peak$others[i])){
-					peak$others[i] <- candidates$others[candIdx]
-					peak$Rsquared[i] <- candidates$Rsquared[candIdx]
-				} else{
-					peak$others[i] <- paste(candidates$others[candIdx], peak$others[i], sep=",")
-					peak$Rsquared[i] <- paste(candidates$Rsquared[candIdx], peak$Rsquared[i], sep=",")
+		if(nrow(peak)){
+			peak$others <- secondary$others
+			peak$Rsquared <- secondary$Rsquared
+			peak$finalPvalue <- secondary$pvalue
+			
+			for(i in 1:nrow(peak)){
+				candIdx <- match(as.character(peak$snps[i]), candidates$snps)
+				if(!is.na(candidates$others[candIdx])){
+					if(is.na(peak$others[i])){
+						peak$others[i] <- candidates$others[candIdx]
+						peak$Rsquared[i] <- candidates$Rsquared[candIdx]
+					} else{
+						peak$others[i] <- paste(candidates$others[candIdx], peak$others[i], sep=",")
+						peak$Rsquared[i] <- paste(candidates$Rsquared[candIdx], peak$Rsquared[i], sep=",")
+					}
 				}
 			}
+			candidates <- subset(candidates, !snps %in% explained)
+			candidates <- rbind(candidates, peak)
 		}
-		candidates <- subset(candidates, !snps %in% explained)
-		candidates <- rbind(candidates, peak)
 	} else {
 		peaks <- subset(candidates, !is.na(finalPvalue))
 		others <- subset(candidates, is.na(finalPvalue))
@@ -179,7 +208,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 					function(s, p, x){
 						tab <- subset(x, (snp1 %in% p$snps & snp2==s) | (snp2 %in% p$snps & snp1==s))
 						i <- match(p$snps, tab$snp1)
-						i[is.na(i)] <- match(p$snps, tab$snp2)
+						i[is.na(i)] <- match(p$snps[is.na(i)], tab$snp2)
 						tab <- tab[i,]
 						ans <- tab$Rsquared
 						ans
