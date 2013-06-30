@@ -53,7 +53,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	}
 	
 	complete <- Rsge::sge.parLapply(unique(as.character(hits$gene)), .submitMultiPeak, 
-			hits, pvalue, gene, snps, cvrt, minR, minFDR, ...)
+			hits, pvalue, gene, snps, cvrt, minR, minFDR, ..., packages=.getPackageNames())
 	
 	complete <- do.call(rbind, complete)
 	complete <- complete[order(complete$pvalue), ]
@@ -94,7 +94,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 				statistic=numeric(), pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
 		peakUpdate$secondary <- character()
 		
-		## Fit model including peak SNP and one other candidate
+		## Fit model including peak SNP(s) and one other candidate
 		tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
 				tmpdir=".", fileext=".tmp")
 		tmpCov <- do.call(combineSlicedData, c(covariate, geno[1:depth]))
@@ -113,8 +113,8 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 					me2 <- runME(expression, snps[[j]], tmpCov, output=tmp2, threshold=1, 
 							cisThreshold=0, cis=0, cluster=FALSE, ...)
 					if(me2$all$eqtls$pvalue > pvalue){
-						warning("Peak SNP ", hits$snps[j], 
-								" is not significant at requested significance threshold of ", pvalue)
+						me1$all$eqtls <- me1$all$eqtls[-i,]
+						next
 					}
 					eqtls <- me2$all$eqtls
 					eqtls$secondary <- hits$snps[i]
