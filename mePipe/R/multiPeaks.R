@@ -177,8 +177,10 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		if(nrow(others)){
 			r2 <- sapply(as.character(others$snps), 
 					function(s, p, x){
-						tab <- subset(x, snp1 %in% p$snps & snp2==s)
-						tab <- tab[match(p$snps, tab$snp1),]
+						tab <- subset(x, (snp1 %in% p$snps & snp2==s) | (snp2 %in% p$snps & snp1==s))
+						i <- match(p$snps, tab$snp1)
+						i[is.na(i)] <- match(p$snps, tab$snp2)
+						tab <- tab[i,]
 						ans <- tab$Rsquared
 						ans
 					}, peaks, ldTable)
