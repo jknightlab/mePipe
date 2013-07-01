@@ -6,6 +6,8 @@ getSNP <- function(data, snp){
 	ans <- NULL
 	if(!is.null(loc)){
 		ans <- loc$row
+	} else{
+		warning("Genotypes for ", snp, " not found")
 	}
 	ans
 }
@@ -17,18 +19,19 @@ getSNP <- function(data, snp){
 toCubeX <- function(data, snps){
 	if(is(data, 'SlicedData')){
 		mat <- lapply(snps, getSNP, data=data)
+		missing <- sapply(mat, is.null) 
+		if(any(missing)){
+			warning("No data found for ", paste(snps[which(missing)], collapse=", "), 
+					" in genotyping file")
+		}
+		mat <- do.call(rbind, mat)
 	} else{
 		if(nrow(data) != length(snps)){
 			stop("Expected matrix with ", length(snps), " rows, got ", nrow(data))
 		}
 		mat <- data
 	}
-	missing <- sapply(mat, is.null) 
-	if(any(missing)){
-		warning("No data found for ", paste(snps[which(missing)], collapse=", "), 
-				" in genotyping file")
-	}
-	mat <- do.call(rbind, mat)
+	
 	ans <- matrix(nrow=0, ncol=9)
 	if(length(mat) > 0 && nrow(mat) > 1){
 		ans <- t(apply(mat[-1, , drop=FALSE], 1, function(x, y){
