@@ -15,7 +15,14 @@ getSNP <- function(data, snp){
 #' @author Peter Humburg
 #' @keywords internal
 toCubeX <- function(data, snps){
-	mat <- lapply(snps, getSNP, data=data)
+	if(is(data, 'SlicedData')){
+		mat <- lapply(snps, getSNP, data=data)
+	} else{
+		if(nrow(data) != length(snps)){
+			stop("Expected matrix with ", length(snps), " rows, got ", nrow(data))
+		}
+		mat <- data
+	}
 	missing <- sapply(mat, is.null) 
 	if(any(missing)){
 		warning("No data found for ", paste(snps[which(missing)], collapse=", "), 
