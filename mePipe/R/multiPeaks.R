@@ -124,19 +124,19 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 							tmpdir=".", fileext=".tmp")
 					tmpCov <- do.call(combineSlicedData, c(covariate, snps[c((1:depth)[-j], i)]))
 					tryCatch(
-					me2 <- runME(expression, snps[[j]], tmpCov, output=tmp2, threshold=1, 
-							cisThreshold=0, cis=0, cluster=FALSE, ...),
-					error=function(e){
-						if(grepl("Colinear", e$message)){
-							me2 <- list()
-							me2$all <- list()
-							me2$all$eqtls <- data.frame(snps=character(), gene=character(),
-									statistic=numeric(), pvalue=numeric(), FDR=numeric())
-						}else{
-							stop(e$message)
-						}
-					},
-					finally=unlink(paste0(tmp2, "*")))
+							me2 <- runME(expression, snps[[j]], tmpCov, output=tmp2, threshold=1, 
+									cisThreshold=0, cis=0, cluster=FALSE, ...),
+							error=function(e){
+								if(grepl("Colinear", e$message)){
+									me2 <- list()
+									me2$all <- list()
+									me2$all$eqtls <- data.frame(snps=character(), gene=character(),
+											statistic=numeric(), pvalue=numeric(), FDR=numeric())
+								}else{
+									stop(e$message)
+								}
+							},
+							finally=unlink(paste0(tmp2, "*")))
 					if(me2$all$eqtls$pvalue > pvalue){
 						me1$all$eqtls <- me1$all$eqtls[-i,]
 						next
