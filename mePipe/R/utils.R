@@ -21,7 +21,7 @@ toCubeX <- function(data, snps){
 		warning("No data found for ", paste(snps[which(missing)], collapse=", "), 
 				" in genotyping file")
 	}
-	mat <- Reduce(rbind, mat)
+	mat <- do.call(rbind, mat)
 	ans <- matrix(nrow=0, ncol=9)
 	if(length(mat) > 0 && nrow(mat) > 1){
 		ans <- t(apply(mat[-1, , drop=FALSE], 1, function(x, y){
