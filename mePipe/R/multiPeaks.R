@@ -93,13 +93,16 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		peakUpdate <- data.frame(snps=character(), gene=character(), 
 				statistic=numeric(), pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
 		peakUpdate$secondary <- character()
+		genoIdx <- which(names(geno) %in% hits$snps[1:depth])
 		
 		## Fit model including peak SNP(s) and one other candidate
 		tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
 				tmpdir=".", fileext=".tmp")
-		tmpCov <- do.call(combineSlicedData, c(covariate, geno[1:depth]))
+		tmpCov <- do.call(combineSlicedData, c(covariate, geno[genoIdx]))
 		tryCatch(
-				me1 <- runME(expression, do.call(combineSlicedData, geno[-(1:depth)]), 
+				## obtain list of SNPs that are still significant when controlling for
+				## `depth` peak SNPs
+				me1 <- runME(expression, do.call(combineSlicedData, geno[-genoIdx]), 
 						tmpCov, output=tmp1, threshold=pvalue, cisThreshold=0, cis=0, 
 						cluster=FALSE, ...),
 				error=function(e){
@@ -116,7 +119,9 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		)
 		
 		if(nrow(me1$all$eqtls)){
-			snps <- c(geno[1:depth] , geno[as.character(me1$all$eqtls$snps)])
+			## ensure that inclusion of the next most significant eSNP will
+			## maintain significance of previous peaks
+			snps <- c(geno[genoIdx] , geno[as.character(me1$all$eqtls$snps)])
 			for(i in (depth+1):length(snps)){
 				for(j in 1:depth){
 					tmp2 <- tempfile(pattern=paste(current, hits$snps[i], paste(hits$snps[j], 
@@ -139,7 +144,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 							finally=unlink(paste0(tmp2, "*")))
 					if(me2$all$eqtls$pvalue > pvalue){
 						me1$all$eqtls <- me1$all$eqtls[-i,]
-						next
+						break
 					}
 					eqtls <- me2$all$eqtls
 					eqtls$secondary <- hits$snps[i]
