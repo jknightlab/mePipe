@@ -118,9 +118,11 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 				},
 				finally=unlink(paste0(tmp1, "*"))
 		)
-		me1$all$eqtls$others <- NA
-		me1$all$eqtls$Rsquared <- NA
-		me1$all$eqtls$finalPvalue <- NA
+		if(nrow(me1$all$eqtls)){
+			me1$all$eqtls$others <- NA
+			me1$all$eqtls$Rsquared <- NA
+			me1$all$eqtls$finalPvalue <- NA
+		}
 		newPeak <- FALSE
 		while(nrow(me1$all$eqtls) && !newPeak){
 			## ensure that inclusion of the next most significant eSNP will
@@ -163,20 +165,24 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		}
 		
 		## update p-values for all SNPs that remain significant
-		idx <- match(as.character(me1$all$eqtls$snps), as.character(hits$snps))
-		hits$finalPvalue[idx] <- me1$all$eqtls$pvalue
-		idx <- match(as.character(peakUpdate$snps), as.character(hits$snps))
-		hits$finalPvalue[idx] <- peakUpdate$pvalue
+		if(nrow(me1$all$eqtls)){
+			idx <- match(as.character(me1$all$eqtls$snps), as.character(hits$snps))
+			hits$finalPvalue[idx] <- me1$all$eqtls$pvalue
+			idx <- match(as.character(peakUpdate$snps), as.character(hits$snps))
+			hits$finalPvalue[idx] <- peakUpdate$pvalue
+		}
 		
 		## SNPs that are no longer significant
-		remove <- subset(hits, !snps %in% c(as.character(me1$all$eqtls$snps), as.character(hits$snps[1:depth])))
+		remove <- subset(hits, !snps %in% c(as.character(me1$all$eqtls$snps), 
+						as.character(hits$snps[1:depth])))
 		
 		## compute LD between remaining SNPs and new peak
-		secondaryLD <- .computeLD(rbind(me1$all$eqtls, remove), genotype, current,
-				maxP=NULL, minR=minR)
-		secondaryPeak <- secondaryLD$groups
-		ldTable <- rbind(ldTable, secondaryLD$proxies)
-		
+		if(nrow(me1$all$eqtls) + nrows(remove) > 0){
+			secondaryLD <- .computeLD(rbind(me1$all$eqtls, remove), genotype, current,
+					maxP=NULL, minR=minR)
+			secondaryPeak <- secondaryLD$groups
+			ldTable <- rbind(ldTable, secondaryLD$proxies)
+		}
 		## remove all SNPs in high LD with new peak
 		hits <- subset(hits, !as.character(snps) %in% remove$snps & 
 						!as.character(snps) %in% subset(secondaryLD$proxies, 
