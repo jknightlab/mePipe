@@ -179,8 +179,8 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		
 		## remove all SNPs in high LD with new peak
 		hits <- subset(hits, !as.character(snps) %in% remove$snps & 
-						!as.character(snps) %in% subset(secondaryLD, snp1==me1$all$eqtls$snps[1] &
-										Rsquared >= minR)$snp2)
+						!as.character(snps) %in% subset(secondaryLD$proxies, 
+								snp1==me1$all$eqtls$snps[1] & Rsquared >= minR)$snp2)
 		rm(secondaryLD)
 		
 		depth <- depth + 1
