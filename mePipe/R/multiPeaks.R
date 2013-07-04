@@ -74,6 +74,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	ldTable <- hitsLD$proxies
 	rm(hitsLD)
 	hits$finalPvalue <- as.numeric(NA)
+	hits <- subset(hits, !snps %in% subset(ldTable, Rsquared >= minR)$snp2)
 	
 	## restrict gene expression data to current gene
 	tmpExpr <- SlicedData$new()
@@ -90,9 +91,6 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	names(geno) <- unique(hits$snps)
 	
 	while(nrow(hits) > depth){
-		peakUpdate <- data.frame(snps=character(), gene=character(), 
-				statistic=numeric(), pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
-		peakUpdate$secondary <- character()
 		genoIdx <- which(names(geno) %in% hits$snps[1:depth])
 		
 		## Fit model including peak SNP(s) and one other candidate
@@ -102,7 +100,8 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		tryCatch(
 				## obtain list of SNPs that are still significant when controlling for
 				## `depth` peak SNPs
-				me1 <- runME(expression, do.call(combineSlicedData, geno[-genoIdx]), 
+				me1 <- runME(expression, do.call(combineSlicedData, 
+								geno[as.character(hits$snps[-(1:depth)])]), 
 						tmpCov, output=tmp1, threshold=pvalue, cisThreshold=0, cis=0, 
 						cluster=FALSE, ...),
 				error=function(e){
@@ -117,54 +116,83 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 				},
 				finally=unlink(paste0(tmp1, "*"))
 		)
-		
-		if(nrow(me1$all$eqtls)){
+		newPeak <- FALSE
+		while(nrow(me1$all$eqtls) && !newPeak){
 			## ensure that inclusion of the next most significant eSNP will
 			## maintain significance of previous peaks
-			snps <- c(geno[genoIdx] , geno[as.character(me1$all$eqtls$snps)])
-			for(i in (depth+1):length(snps)){
-				for(j in 1:depth){
-					tmp2 <- tempfile(pattern=paste(current, hits$snps[i], paste(hits$snps[j], 
-											collapse="_"), "", sep="_"), 
-							tmpdir=".", fileext=".tmp")
-					tmpCov <- do.call(combineSlicedData, c(covariate, snps[c((1:depth)[-j], i)]))
-					tryCatch(
-							me2 <- runME(expression, snps[[j]], tmpCov, output=tmp2, threshold=1, 
-									cisThreshold=0, cis=0, cluster=FALSE, ...),
-							error=function(e){
-								if(grepl("Colinear", e$message)){
-									me2 <- list()
-									me2$all <- list()
-									me2$all$eqtls <- data.frame(snps=character(), gene=character(),
-											statistic=numeric(), pvalue=numeric(), FDR=numeric())
-								}else{
-									stop(e$message)
-								}
-							},
-							finally=unlink(paste0(tmp2, "*")))
-					if(me2$all$eqtls$pvalue > pvalue){
-						me1$all$eqtls <- me1$all$eqtls[-i,]
-						break
-					}
-					eqtls <- me2$all$eqtls
-					eqtls$secondary <- hits$snps[i]
-					peakUpdate <- rbind(peakUpdate, eqtls)
+			peakUpdate <- data.frame(snps=character(), gene=character(), 
+					statistic=numeric(), pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
+			peakUpdate$secondary <- character()
+			snps <- geno[genoIdx] #c(geno[genoIdx] , geno[as.character(me1$all$eqtls$snps)])
+			tmpCov <- do.call(combineSlicedData, c(covariate, 
+							geno[as.character(me1$all$eqtls$snps[1])]))
+			peakOK <- logical(depth)
+			for(j in 1:depth){
+				tmp2 <- tempfile(pattern=paste(current, me1$all$eqtls$snps[1], 
+								paste(hits$snps[j], collapse="_"), "", sep="_"), 
+						tmpdir=".", fileext=".tmp")
+				
+				tryCatch(
+						me2 <- runME(expression, geno[genoIdx][[j]], tmpCov, 
+								output=tmp2, threshold=1, cisThreshold=0, cis=0, 
+								cluster=FALSE, ...),
+						error=function(e){
+							if(grepl("Colinear", e$message)){
+								me2 <- list()
+								me2$all <- list()
+								me2$all$eqtls <- data.frame(snps=character(), gene=character(),
+										statistic=numeric(), pvalue=numeric(), FDR=numeric())
+							}else{
+								stop(e$message)
+							}
+						},
+						finally=unlink(paste0(tmp2, "*")))
+				if(me2$all$eqtls$pvalue > pvalue || me2$all$eqtls$pvalue > me1$all$eqtls$pvalue[1]){
+					me1$all$eqtls <- me1$all$eqtls[-1,]
+					break
 				}
+				peakOK[j] <- TRUE
+				peakUpdate <- rbind(peakUpdate, me2$all$eqtls)
 			}
+			newPeak <- all(peakOK)
 		}
-		secondaryPeak <- me1$all$eqtls[order(me1$all$eqtls$pvalue),]
-		primary <-subset(peakUpdate, secondary == as.character(secondaryPeak$snps[1]))
 		
-		secondaryLD <- getLDpairs(secondaryPeak, genotype, minR=minR, minFDR=1, cluster=FALSE)
+		## update p-values for all SNPs that remain significant
+		idx <- match(as.character(me1$all$eqtls$snps), as.character(hits$snps))
+		hits$finalPvalue[idx] <- me1$all$eqtls$pvalue
+		idx <- match(as.character(peakUpdate$snps), as.character(hits$snps))
+		hits$finalPvalue[idx] <- peakUpdate$pvalue
+		
+		## SNPs that are no longer significant
+		remove <- subset(hits, !snps %in% c(as.character(me1$all$eqtls$snps), as.character(hits$snps[1:depth])))
+		
+		## compute LD between remaining SNPs and new peak
+		secondaryLD <- getLDpairs(rbind(me1$all$eqtls, remove), genotype, 
+				minR=minR, minFDR=1, cluster=FALSE)
 		secondaryPeak <- secondaryLD$groups
 		ldTable <- rbind(ldTable, secondaryLD$proxies)
+		
+		## remove all SNPs in high LD with new peak
+		hits <- subset(hits, !as.character(snps) %in% remove$snps & 
+						!as.character(snps) %in% subset(secondaryLD, snp1==me1$all$eqtls$snps[1] &
+										Rsquared >= minR)$snp2)
 		rm(secondaryLD)
 		
-		## update candidates
-		hits <- .submitMultiUpdate(primary=primary, secondary=secondaryPeak, 
-				candidates=hits, snps=snps, ldTable=ldTable)
 		depth <- depth + 1
 	}
+	## for each peak, get list of proxy SNPs
+	ldTable <- subset(ldTable, !snp2 %in% hits$snps)
+	assignedPeak <- by(ldTable, ldTable$snp2, function(x) {
+				i <- which.max(x$Rsquared) 
+				list(peak=x[i, "snp1"], Rsquared=x[i, "Rsquared"])
+			})
+	proxies <- tapply(ldTable$snp2, sapply(assignedPeak, '[[', "peak"), paste, collapse=",")
+	r2 <- sapply(assignedPeak, '[[', "Rsquared")
+	r2 <- tapply(r2, sapply(assignedPeak, '[[', "peak"), paste, collapse=",")
+	idx <- match(assignedPeak, as.character(hits$snps))
+	hits$others <- proxies[idx]
+	hits$Rsquared <- r2[idx]
+	
 	hits
 }
 
