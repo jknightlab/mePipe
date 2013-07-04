@@ -69,7 +69,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	hits <- subset(hits, gene == current)
 	
 	depth <- 1
-	hitsLD <- getLDpairs(hits, genotype, minR=minR, minFDR=minFDR, cluster=FALSE)
+	hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR, minFDR=minFDR)
 	hits <- hitsLD$groups
 	ldTable <- hitsLD$proxies
 	rm(hitsLD)
@@ -116,6 +116,9 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 				},
 				finally=unlink(paste0(tmp1, "*"))
 		)
+		me1$all$eqtls$others <- NA
+		me1$all$eqtls$Rsquared <- NA
+		me1$all$eqtls$finalPvalue <- NA
 		newPeak <- FALSE
 		while(nrow(me1$all$eqtls) && !newPeak){
 			## ensure that inclusion of the next most significant eSNP will
@@ -167,8 +170,8 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		remove <- subset(hits, !snps %in% c(as.character(me1$all$eqtls$snps), as.character(hits$snps[1:depth])))
 		
 		## compute LD between remaining SNPs and new peak
-		secondaryLD <- getLDpairs(rbind(me1$all$eqtls, remove), genotype, 
-				minR=minR, minFDR=1, cluster=FALSE)
+		secondaryLD <- .computeLD(rbind(me1$all$eqtls, remove), genotype, current,
+				maxP=NULL, minR=minR, minFDR=1)
 		secondaryPeak <- secondaryLD$groups
 		ldTable <- rbind(ldTable, secondaryLD$proxies)
 		
