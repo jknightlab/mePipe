@@ -171,6 +171,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 			idx <- match(as.character(peakUpdate$snps), as.character(hits$snps))
 			hits$finalPvalue[idx] <- peakUpdate$pvalue
 		}
+		hits <- hits[order(hits$finalPvalue), ]
 		
 		## SNPs that are no longer significant
 		remove <- subset(hits, !snps %in% c(as.character(me1$all$eqtls$snps),
@@ -201,8 +202,8 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	r2 <- sapply(assignedPeak, '[[', "Rsquared")
 	r2 <- tapply(r2, peaks, paste, collapse=",")
 	idx <- match(names(proxies), as.character(hits$snps))
-	hits$others[idx] <- proxies
-	hits$Rsquared[idx] <- r2
+	hits$others[idx] <- paste(hits$others[idx], proxies, sep=",")
+	hits$Rsquared[idx] <- paste(hits$Rsquared[idx], r2, sep=",")
 	
 	hits
 }
