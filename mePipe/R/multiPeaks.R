@@ -173,14 +173,13 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		}
 		
 		## SNPs that are no longer significant
-		remove <- subset(hits, !snps %in% c(as.character(me1$all$eqtls$snps), 
+		remove <- subset(hits, !snps %in% c(as.character(me1$all$eqtls$snps),
 						as.character(hits$snps[1:depth])))
 		
 		## compute LD between remaining SNPs and new peak
-		if(nrow(me1$all$eqtls) + nrows(remove) > 0){
+		if(nrow(me1$all$eqtls) + nrow(remove) > 0){
 			secondaryLD <- .computeLD(rbind(me1$all$eqtls, remove), genotype, current,
 					maxP=NULL, minR=minR)
-			secondaryPeak <- secondaryLD$groups
 			ldTable <- rbind(ldTable, secondaryLD$proxies)
 		}
 		## remove all SNPs in high LD with new peak
@@ -192,17 +191,18 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		depth <- depth + 1
 	}
 	## for each peak, get list of proxy SNPs
-	ldTable <- subset(ldTable, !snp2 %in% hits$snps)
+	ldTable <- subset(ldTable, !snp2 %in% hits$snps & snp1 %in% hits$snps)
 	assignedPeak <- by(ldTable, ldTable$snp2, function(x) {
 				i <- which.max(x$Rsquared) 
 				list(peak=x[i, "snp1"], Rsquared=x[i, "Rsquared"])
 			})
-	proxies <- tapply(ldTable$snp2, sapply(assignedPeak, '[[', "peak"), paste, collapse=",")
+	peaks <- sapply(assignedPeak, '[[', "peak")
+	proxies <- tapply(names(assignedPeak), peaks, paste, collapse=",")
 	r2 <- sapply(assignedPeak, '[[', "Rsquared")
-	r2 <- tapply(r2, sapply(assignedPeak, '[[', "peak"), paste, collapse=",")
-	idx <- match(assignedPeak, as.character(hits$snps))
-	hits$others <- proxies[idx]
-	hits$Rsquared <- r2[idx]
+	r2 <- tapply(r2, peaks, paste, collapse=",")
+	idx <- match(names(proxies), as.character(hits$snps))
+	hits$others[idx] <- proxies
+	hits$Rsquared[idx] <- r2
 	
 	hits
 }
