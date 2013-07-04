@@ -67,13 +67,15 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 .submitMultiPeak <- function(current, hits, pvalue, expression, genotype, covariate, 
 		minR, minFDR, ...){
 	hits <- subset(hits, gene == current & FDR <= minFDR)
+	hits$others <- NA
+	hits$Rsquared <- NA
 	
 	depth <- 1
 	hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR)
-	hits <- hitsLD$groups
+	hits[1,] <- hitsLD$groups
 	ldTable <- hitsLD$proxies
 	rm(hitsLD)
-	hits$finalPvalue <- as.numeric(NA)
+	hits$finalPvalue <- NA
 	hits <- subset(hits, !snps %in% subset(ldTable, Rsquared >= minR)$snp2)
 	
 	## restrict gene expression data to current gene
