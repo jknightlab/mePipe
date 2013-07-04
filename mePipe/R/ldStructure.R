@@ -294,7 +294,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 	ans
 }
 
-.computeLD <- function(eqtls, geno, selGene, maxP, Rsquared, minR){
+.computeLD <- function(eqtls, geno, selGene, maxP, minR){
 	## create CubeX input file for all pairs including the peak SNP
 	snpMat <- toCubeX(geno, as.character(eqtls$snps))
 	tmp <- tempfile(pattern=paste(selGene, eqtls$snps[1], "", sep="_"), 

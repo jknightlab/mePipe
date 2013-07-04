@@ -66,10 +66,10 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 #' @keywords internal
 .submitMultiPeak <- function(current, hits, pvalue, expression, genotype, covariate, 
 		minR, minFDR, ...){
-	hits <- subset(hits, gene == current)
+	hits <- subset(hits, gene == current & FDR <= minFDR)
 	
 	depth <- 1
-	hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR, minFDR=minFDR)
+	hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR)
 	hits <- hitsLD$groups
 	ldTable <- hitsLD$proxies
 	rm(hitsLD)
@@ -171,7 +171,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 		
 		## compute LD between remaining SNPs and new peak
 		secondaryLD <- .computeLD(rbind(me1$all$eqtls, remove), genotype, current,
-				maxP=NULL, minR=minR, minFDR=1)
+				maxP=NULL, minR=minR)
 		secondaryPeak <- secondaryLD$groups
 		ldTable <- rbind(ldTable, secondaryLD$proxies)
 		
