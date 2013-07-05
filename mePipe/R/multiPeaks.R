@@ -122,6 +122,9 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 			me1$all$eqtls$others <- NA
 			me1$all$eqtls$Rsquared <- NA
 			me1$all$eqtls$finalPvalue <- NA
+			## only keep SNPs for which p-value doesn't increase
+			idx <- match(as.character(me1$all$eqtls$snps), as.character(hits$snps[-(1:depth)]))
+			me1$all$eqtls <- subset(me1$all$eqtls, me1$all$eqtls$pvalue <= hits$pvalue[idx])
 		}
 		newPeak <- FALSE
 		while(nrow(me1$all$eqtls) && !newPeak){
@@ -130,7 +133,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 			peakUpdate <- data.frame(snps=character(), gene=character(), 
 					statistic=numeric(), pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
 			peakUpdate$secondary <- character()
-			snps <- geno[genoIdx] #c(geno[genoIdx] , geno[as.character(me1$all$eqtls$snps)])
+			snps <- geno[genoIdx]
 			tmpCov <- do.call(combineSlicedData, c(covariate, 
 							geno[as.character(me1$all$eqtls$snps[1])]))
 			peakOK <- logical(depth)
@@ -154,7 +157,9 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 							}
 						},
 						finally=unlink(paste0(tmp2, "*")))
-				if(me2$all$eqtls$pvalue > pvalue || me2$all$eqtls$pvalue > me1$all$eqtls$pvalue[1]){
+				if(me2$all$eqtls$pvalue > pvalue || 
+						me2$all$eqtls$pvalue > me1$all$eqtls$pvalue[1] ||
+						me2$all$eqtls$pvalue > hits$pvalue[hits$snps == me2$all$eqtls$snps]){
 					me1$all$eqtls <- me1$all$eqtls[-1,]
 					break
 				}
@@ -202,8 +207,10 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	r2 <- sapply(assignedPeak, '[[', "Rsquared")
 	r2 <- tapply(r2, peaks, paste, collapse=",")
 	idx <- match(names(proxies), as.character(hits$snps))
-	hits$others[idx] <- paste(hits$others[idx], proxies, sep=",")
-	hits$Rsquared[idx] <- paste(hits$Rsquared[idx], r2, sep=",")
+	hits$others[idx] <- paste(ifelse(is.na(hits$others[idx]), "", hits$others[idx]), 
+			proxies, sep=",")
+	hits$Rsquared[idx] <- paste(ifelse(is.na(hits$Rsquared[idx]), "", hits$Rsquared[idx]), 
+			r2, sep=",")
 	
 	hits
 }
