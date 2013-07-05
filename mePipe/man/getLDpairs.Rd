@@ -4,7 +4,8 @@
 The resulting list of eSNPs for the same gene may be considered independent signals.}
 \usage{
   getLDpairs(eqtls, genotype, minFDR = 0.05, maxP = NULL,
-    minR = 0.8, genoOpt = getOptions())
+    minR = 0.8, genoOpt = getOptions(),
+    cluster = Rsge::sge.getOption("sge.use.cluster"))
 }
 \arguments{
   \item{eqtls}{A \code{data.frame} with eQTLs as generated
@@ -26,6 +27,9 @@ The resulting list of eSNPs for the same gene may be considered independent sign
 
   \item{genoOpt}{List of options for reading of genotype
   data.}
+
+  \item{cluster}{Logical indicating whether jobs should be
+  submitted to SGE or run locally}
 }
 \value{
   A list with components \describe{ \item{groups}{A

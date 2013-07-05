@@ -9,7 +9,8 @@
     covOpt = getOptions(), threshold = 1e-05,
     cisThreshold = 0.001,
     model = c("linear", "anova", "cross"), cis = 1e+06,
-    bins = 0, verbose = FALSE, qqplot = FALSE)
+    bins = 0, verbose = FALSE, qqplot = FALSE,
+    cluster = sge.getOption("sge.use.cluster"))
 }
 \arguments{
   \item{expression}{File name of gene expression data or a

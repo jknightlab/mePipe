@@ -2,7 +2,7 @@
 \alias{combineSlicedData}
 \title{Combine two \code{SlicedData} objects}
 \usage{
-  combineSlicedData(x, y)
+  combineSlicedData(...)
 }
 \arguments{
   \item{x}{A \code{SlicedData} object}
