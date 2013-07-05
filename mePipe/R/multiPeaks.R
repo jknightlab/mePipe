@@ -207,11 +207,14 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	r2 <- sapply(assignedPeak, '[[', "Rsquared")
 	r2 <- tapply(r2, peaks, paste, collapse=",")
 	idx <- match(names(proxies), as.character(hits$snps))
-	hits$others[idx] <- paste(ifelse(is.na(hits$others[idx]), "", hits$others[idx]), 
-			proxies, sep=",")
-	hits$Rsquared[idx] <- paste(ifelse(is.na(hits$Rsquared[idx]), "", hits$Rsquared[idx]), 
-			r2, sep=",")
-	
+	hits$others[idx][is.na(hits$others[idx])] <- proxies[is.na(hits$others[idx])]
+	hits$others[idx][!is.na(hits$others[idx])] <- 
+			paste(hits$others[idx][!is.na(hits$others[idx])], 
+					proxies[!is.na(hits$others[idx])], sep=",")
+	hits$Rsquared[idx][is.na(hits$Rsquared[idx])] <- r2[is.na(hits$Rsquared[idx])]
+	hits$Rsquared[idx][!is.na(hits$Rsquared[idx])] <- 
+			paste(hits$Rsquared[idx][!is.na(hits$Rsquared[idx])], 
+					r2[!is.na(hits$Rsquared[idx])], sep=",")
 	hits
 }
 
