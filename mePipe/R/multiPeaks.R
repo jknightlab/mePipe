@@ -159,7 +159,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 						finally=unlink(paste0(tmp2, "*")))
 				if(me2$all$eqtls$pvalue > pvalue || 
 						me2$all$eqtls$pvalue > me1$all$eqtls$pvalue[1] ||
-						me2$all$eqtls$pvalue > hits$pvalue[hits$snps == me2$all$eqtls$snps]){
+						me2$all$eqtls$pvalue > hits$pvalue[as.character(hits$snps) == as.character(me2$all$eqtls$snps)]){
 					me1$all$eqtls <- me1$all$eqtls[-1,]
 					break
 				}
