@@ -562,7 +562,7 @@ if(opt$multiPeak){
 		multi <- getMultiPeak(me$all$eqtls, opt$multiPvalue, 
 				arguments$args[1], arguments$arg[2], allCovariates, opt$ldFDR,
 				opt$ldR2, fileOptions, fileOptions, fileOptions, output=opt$output, 
-				error=opt$error, model=opt$model)
+				error=opt$error, model=opt$model, verbose=opt$verbose)
 		write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
 				quote=FALSE, sep="\t")
 	} else{
@@ -581,7 +581,7 @@ if(opt$multiPeak){
 			multi <- getMultiPeak(me$cis$eqtls, opt$multiPvalue, 
 					arguments$args[1], arguments$arg[2], cisCovariates, opt$ldFDR,
 					opt$ldR2, fileOptions, fileOptions, fileOptions, output=opt$output, 
-					error=opt$error, model=opt$model)
+					error=opt$error, model=opt$model, verbose=opt$verbose)
 			write.table(multi, file=paste(opt$cisoutput, "peaks", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")
 		}
@@ -600,7 +600,7 @@ if(opt$multiPeak){
 			multi <- getMultiPeak(me$trans$eqtls, opt$multiPvalue, 
 					arguments$args[1], arguments$arg[2], transCovariates, opt$ldFDR,
 					opt$ldR2, fileOptions, fileOptions, fileOptions, output=opt$output, 
-					error=opt$error, model=opt$model)
+					error=opt$error, model=opt$model, verbose=opt$verbose)
 			write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")
 		}
