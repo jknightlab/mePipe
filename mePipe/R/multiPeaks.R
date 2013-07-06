@@ -70,7 +70,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	hits$others <- NA
 	hits$Rsquared <- NA
 	
-	if(verbose) message("Precessing gene ", current, " (", nrow(hits), " eSNPs)")
+	if(verbose) message("Processing gene ", current, " (", nrow(hits), " eSNPs)")
 	
 	depth <- 1
 	hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR)
