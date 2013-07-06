@@ -12,6 +12,23 @@ getSNP <- function(data, snp){
 	ans
 }
 
+#' Extract rows from SlicedData object by name
+#' @author Peter Humburg
+#' @keywords internal
+subsetRows <- function(data, names){
+	if(!is(data, "SlicedData"))
+		stop("Argument `data` has to be of class `SlicedData`")
+	names <- unique(names)
+	result <- lapply(names, function(x){
+				ans <- SlicedData$new()
+				ans$CreateFromMatrix(data$FindRow(x)$row)
+				ans
+			}
+	)
+	names(result) <- names
+	result
+}
+
 #' Extract named SNPs from SlicedData object and return them in the format
 #' expected by CubeX
 #' @author Peter Humburg

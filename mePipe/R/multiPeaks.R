@@ -65,10 +65,12 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 #' @author Peter Humburg
 #' @keywords internal
 .submitMultiPeak <- function(current, hits, pvalue, expression, genotype, covariate, 
-		minR, minFDR, ...){
+		minR, minFDR, verbose=FALSE, ...){
 	hits <- subset(hits, gene == current & FDR <= minFDR)
 	hits$others <- NA
 	hits$Rsquared <- NA
+	
+	if(verbose) message("Precessing gene ", current, " (", nrow(hits), " eSNPs)")
 	
 	depth <- 1
 	hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR)
@@ -84,13 +86,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	expression <- tmpExpr
 	
 	## extract all candidate SNPs (including primary peak)
-	geno <- lapply(unique(hits$snps), function(x){
-				ans <- SlicedData$new()
-				ans$CreateFromMatrix(genotype$FindRow(x)$row)
-				ans
-			}
-	)
-	names(geno) <- unique(hits$snps)
+	geno <- subsetRows(genotype, unique(hits$snps))
 	
 	while(nrow(hits) > depth){
 		genoIdx <- which(names(geno) %in% hits$snps[1:depth])
