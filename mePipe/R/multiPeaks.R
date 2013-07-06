@@ -213,6 +213,7 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 				paste(hits$Rsquared[idx][!is.na(hits$Rsquared[idx])], 
 						r2[!is.na(hits$Rsquared[idx])], sep=",")
 	}
+	if(verbose) message(nrow(hits), " peaks found")
 	hits
 }
 
