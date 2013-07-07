@@ -67,152 +67,155 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 .submitMultiPeak <- function(current, hits, pvalue, expression, genotype, covariate, 
 		minR, minFDR, verbose=FALSE, ...){
 	hits <- subset(hits, gene == current & FDR <= minFDR)
-	hits$others <- NA
-	hits$Rsquared <- NA
 	
 	if(verbose) message("Processing gene ", current, " (", nrow(hits), " eSNPs)")
 	
-	depth <- 1
-	hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR)
-	hits[1,] <- hitsLD$groups
-	ldTable <- hitsLD$proxies
-	rm(hitsLD)
-	hits$finalPvalue <- NA
-	hits <- subset(hits, !snps %in% subset(ldTable, Rsquared >= minR)$snp2)
-	
-	## restrict gene expression data to current gene
-	tmpExpr <- SlicedData$new()
-	tmpExpr$CreateFromMatrix(expression$FindRow(current)$row)
-	expression <- tmpExpr
-	
-	## extract all candidate SNPs (including primary peak)
-	geno <- subsetRows(genotype, unique(hits$snps))
-	
-	while(nrow(hits) > depth){
-		genoIdx <- which(names(geno) %in% hits$snps[1:depth])
+	if(nrow(hits)){
+		hits$others <- NA
+		hits$Rsquared <- NA
 		
-		## Fit model including peak SNP(s) and one other candidate
-		tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
-				tmpdir=".", fileext=".tmp")
-		tmpCov <- do.call(combineSlicedData, c(covariate, geno[genoIdx]))
-		tryCatch(
-				## obtain list of SNPs that are still significant when controlling for
-				## `depth` peak SNPs
-				me1 <- runME(expression, do.call(combineSlicedData, 
-								geno[as.character(hits$snps[-(1:depth)])]), 
-						tmpCov, output=tmp1, threshold=pvalue, cisThreshold=0, cis=0, 
-						cluster=FALSE, ...),
-				error=function(e){
-					if(grepl("Colinear", e$message)){
-						me1 <- list()
-						me1$all <- list()
-						me1$all$eqtls <- data.frame(snps=character(), gene=character(),
-								statistic=numeric(), pvalue=numeric(), FDR=numeric())
-					} else{
-						stop(e$message)
-					}
-				},
-				finally=unlink(paste0(tmp1, "*"))
-		)
-		if(nrow(me1$all$eqtls)){
-			me1$all$eqtls$others <- NA
-			me1$all$eqtls$Rsquared <- NA
-			me1$all$eqtls$finalPvalue <- NA
-			## only keep SNPs for which p-value doesn't increase
-			idx <- match(as.character(me1$all$eqtls$snps), as.character(hits$snps[-(1:depth)]))
-			me1$all$eqtls <- subset(me1$all$eqtls, me1$all$eqtls$pvalue <= hits$pvalue[idx])
-		}
-		newPeak <- FALSE
-		while(nrow(me1$all$eqtls) && !newPeak){
-			## ensure that inclusion of the next most significant eSNP will
-			## maintain significance of previous peaks
-			peakUpdate <- data.frame(snps=character(), gene=character(), 
-					statistic=numeric(), pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
-			peakUpdate$secondary <- character()
-			snps <- geno[genoIdx]
-			tmpCov <- do.call(combineSlicedData, c(covariate, 
-							geno[as.character(me1$all$eqtls$snps[1])]))
-			peakOK <- logical(depth)
-			for(j in 1:depth){
-				tmp2 <- tempfile(pattern=paste(current, me1$all$eqtls$snps[1], 
-								paste(hits$snps[j], collapse="_"), "", sep="_"), 
-						tmpdir=".", fileext=".tmp")
-				
-				tryCatch(
-						me2 <- runME(expression, geno[genoIdx][[j]], tmpCov, 
-								output=tmp2, threshold=1, cisThreshold=0, cis=0, 
-								cluster=FALSE, ...),
-						error=function(e){
-							if(grepl("Colinear", e$message)){
-								me2 <- list()
-								me2$all <- list()
-								me2$all$eqtls <- data.frame(snps=character(), gene=character(),
-										statistic=numeric(), pvalue=numeric(), FDR=numeric())
-							}else{
-								stop(e$message)
-							}
-						},
-						finally=unlink(paste0(tmp2, "*")))
-				if(me2$all$eqtls$pvalue > pvalue || 
-						me2$all$eqtls$pvalue > me1$all$eqtls$pvalue[1] ||
-						me2$all$eqtls$pvalue > hits$pvalue[as.character(hits$snps) == as.character(me2$all$eqtls$snps)]){
-					me1$all$eqtls <- me1$all$eqtls[-1,]
-					break
-				}
-				peakOK[j] <- TRUE
-				peakUpdate <- rbind(peakUpdate, me2$all$eqtls)
+		depth <- 1
+		hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR)
+		hits[1,] <- hitsLD$groups
+		ldTable <- hitsLD$proxies
+		rm(hitsLD)
+		hits$finalPvalue <- NA
+		hits <- subset(hits, !snps %in% subset(ldTable, Rsquared >= minR)$snp2)
+		
+		## restrict gene expression data to current gene
+		tmpExpr <- SlicedData$new()
+		tmpExpr$CreateFromMatrix(expression$FindRow(current)$row)
+		expression <- tmpExpr
+		
+		## extract all candidate SNPs (including primary peak)
+		geno <- subsetRows(genotype, unique(hits$snps))
+		
+		while(nrow(hits) > depth){
+			genoIdx <- which(names(geno) %in% hits$snps[1:depth])
+			
+			## Fit model including peak SNP(s) and one other candidate
+			tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
+					tmpdir=".", fileext=".tmp")
+			tmpCov <- do.call(combineSlicedData, c(covariate, geno[genoIdx]))
+			tryCatch(
+					## obtain list of SNPs that are still significant when controlling for
+					## `depth` peak SNPs
+					me1 <- runME(expression, do.call(combineSlicedData, 
+									geno[as.character(hits$snps[-(1:depth)])]), 
+							tmpCov, output=tmp1, threshold=pvalue, cisThreshold=0, cis=0, 
+							cluster=FALSE, ...),
+					error=function(e){
+						if(grepl("Colinear", e$message)){
+							me1 <- list()
+							me1$all <- list()
+							me1$all$eqtls <- data.frame(snps=character(), gene=character(),
+									statistic=numeric(), pvalue=numeric(), FDR=numeric())
+						} else{
+							stop(e$message)
+						}
+					},
+					finally=unlink(paste0(tmp1, "*"))
+			)
+			if(nrow(me1$all$eqtls)){
+				me1$all$eqtls$others <- NA
+				me1$all$eqtls$Rsquared <- NA
+				me1$all$eqtls$finalPvalue <- NA
+				## only keep SNPs for which p-value doesn't increase
+				idx <- match(as.character(me1$all$eqtls$snps), as.character(hits$snps[-(1:depth)]))
+				me1$all$eqtls <- subset(me1$all$eqtls, me1$all$eqtls$pvalue <= hits$pvalue[idx])
 			}
-			newPeak <- all(peakOK)
+			newPeak <- FALSE
+			while(nrow(me1$all$eqtls) && !newPeak){
+				## ensure that inclusion of the next most significant eSNP will
+				## maintain significance of previous peaks
+				peakUpdate <- data.frame(snps=character(), gene=character(), 
+						statistic=numeric(), pvalue=numeric(), FDR=numeric(), stringsAsFactors=FALSE)
+				peakUpdate$secondary <- character()
+				snps <- geno[genoIdx]
+				tmpCov <- do.call(combineSlicedData, c(covariate, 
+								geno[as.character(me1$all$eqtls$snps[1])]))
+				peakOK <- logical(depth)
+				for(j in 1:depth){
+					tmp2 <- tempfile(pattern=paste(current, me1$all$eqtls$snps[1], 
+									paste(hits$snps[j], collapse="_"), "", sep="_"), 
+							tmpdir=".", fileext=".tmp")
+					
+					tryCatch(
+							me2 <- runME(expression, geno[genoIdx][[j]], tmpCov, 
+									output=tmp2, threshold=1, cisThreshold=0, cis=0, 
+									cluster=FALSE, ...),
+							error=function(e){
+								if(grepl("Colinear", e$message)){
+									me2 <- list()
+									me2$all <- list()
+									me2$all$eqtls <- data.frame(snps=character(), gene=character(),
+											statistic=numeric(), pvalue=numeric(), FDR=numeric())
+								}else{
+									stop(e$message)
+								}
+							},
+							finally=unlink(paste0(tmp2, "*")))
+					if(me2$all$eqtls$pvalue > pvalue || 
+							me2$all$eqtls$pvalue > me1$all$eqtls$pvalue[1] ||
+							me2$all$eqtls$pvalue > hits$pvalue[as.character(hits$snps) == as.character(me2$all$eqtls$snps)]){
+						me1$all$eqtls <- me1$all$eqtls[-1,]
+						break
+					}
+					peakOK[j] <- TRUE
+					peakUpdate <- rbind(peakUpdate, me2$all$eqtls)
+				}
+				newPeak <- all(peakOK)
+			}
+			
+			## update p-values for all SNPs that remain significant
+			if(nrow(me1$all$eqtls)){
+				idx <- match(as.character(me1$all$eqtls$snps), as.character(hits$snps))
+				hits$finalPvalue[idx] <- me1$all$eqtls$pvalue
+				idx <- match(as.character(peakUpdate$snps), as.character(hits$snps))
+				hits$finalPvalue[idx] <- peakUpdate$pvalue
+			}
+			hits <- hits[order(hits$finalPvalue), ]
+			
+			## SNPs that are no longer significant
+			remove <- subset(hits, !snps %in% c(as.character(me1$all$eqtls$snps),
+							as.character(hits$snps[1:depth])))
+			
+			## compute LD between remaining SNPs and new peak
+			if(nrow(me1$all$eqtls) + nrow(remove) > 0){
+				secondaryLD <- .computeLD(rbind(me1$all$eqtls, remove), genotype, current,
+						maxP=NULL, minR=minR)
+				ldTable <- rbind(ldTable, secondaryLD$proxies)
+			}
+			## remove all SNPs in high LD with new peak
+			hits <- subset(hits, !as.character(snps) %in% remove$snps & 
+							!as.character(snps) %in% subset(secondaryLD$proxies, 
+									snp1==me1$all$eqtls$snps[1] & Rsquared >= minR)$snp2)
+			rm(secondaryLD)
+			
+			depth <- depth + 1
 		}
-		
-		## update p-values for all SNPs that remain significant
-		if(nrow(me1$all$eqtls)){
-			idx <- match(as.character(me1$all$eqtls$snps), as.character(hits$snps))
-			hits$finalPvalue[idx] <- me1$all$eqtls$pvalue
-			idx <- match(as.character(peakUpdate$snps), as.character(hits$snps))
-			hits$finalPvalue[idx] <- peakUpdate$pvalue
-		}
-		hits <- hits[order(hits$finalPvalue), ]
-		
-		## SNPs that are no longer significant
-		remove <- subset(hits, !snps %in% c(as.character(me1$all$eqtls$snps),
-						as.character(hits$snps[1:depth])))
-		
-		## compute LD between remaining SNPs and new peak
-		if(nrow(me1$all$eqtls) + nrow(remove) > 0){
-			secondaryLD <- .computeLD(rbind(me1$all$eqtls, remove), genotype, current,
-					maxP=NULL, minR=minR)
-			ldTable <- rbind(ldTable, secondaryLD$proxies)
-		}
-		## remove all SNPs in high LD with new peak
-		hits <- subset(hits, !as.character(snps) %in% remove$snps & 
-						!as.character(snps) %in% subset(secondaryLD$proxies, 
-								snp1==me1$all$eqtls$snps[1] & Rsquared >= minR)$snp2)
-		rm(secondaryLD)
-		
-		depth <- depth + 1
-	}
-	## for each peak, get list of proxy SNPs
-	if(nrow(hits) > 1){
-		ldTable <- subset(ldTable, !snp2 %in% hits$snps & snp1 %in% hits$snps)
-		if(nrow(ldTable)){
-			assignedPeak <- by(ldTable, ldTable$snp2, function(x) {
-						i <- which.max(x$Rsquared) 
-						list(peak=x[i, "snp1"], Rsquared=x[i, "Rsquared"])
-					})
-			peaks <- sapply(assignedPeak, '[[', "peak")
-			proxies <- tapply(names(assignedPeak), peaks, paste, collapse=",")
-			r2 <- sapply(assignedPeak, '[[', "Rsquared")
-			r2 <- tapply(r2, peaks, paste, collapse=",")
-			idx <- match(names(proxies), as.character(hits$snps))
-			hits$others[idx][is.na(hits$others[idx])] <- proxies[is.na(hits$others[idx])]
-			hits$others[idx][!is.na(hits$others[idx])] <- 
-					paste(hits$others[idx][!is.na(hits$others[idx])], 
-							proxies[!is.na(hits$others[idx])], sep=",")
-			hits$Rsquared[idx][is.na(hits$Rsquared[idx])] <- r2[is.na(hits$Rsquared[idx])]
-			hits$Rsquared[idx][!is.na(hits$Rsquared[idx])] <- 
-					paste(hits$Rsquared[idx][!is.na(hits$Rsquared[idx])], 
-							r2[!is.na(hits$Rsquared[idx])], sep=",")
+		## for each peak, get list of proxy SNPs
+		if(nrow(hits) > 1){
+			ldTable <- subset(ldTable, !snp2 %in% hits$snps & snp1 %in% hits$snps)
+			if(nrow(ldTable)){
+				assignedPeak <- by(ldTable, ldTable$snp2, function(x) {
+							i <- which.max(x$Rsquared) 
+							list(peak=x[i, "snp1"], Rsquared=x[i, "Rsquared"])
+						})
+				peaks <- sapply(assignedPeak, '[[', "peak")
+				proxies <- tapply(names(assignedPeak), peaks, paste, collapse=",")
+				r2 <- sapply(assignedPeak, '[[', "Rsquared")
+				r2 <- tapply(r2, peaks, paste, collapse=",")
+				idx <- match(names(proxies), as.character(hits$snps))
+				hits$others[idx][is.na(hits$others[idx])] <- proxies[is.na(hits$others[idx])]
+				hits$others[idx][!is.na(hits$others[idx])] <- 
+						paste(hits$others[idx][!is.na(hits$others[idx])], 
+								proxies[!is.na(hits$others[idx])], sep=",")
+				hits$Rsquared[idx][is.na(hits$Rsquared[idx])] <- r2[is.na(hits$Rsquared[idx])]
+				hits$Rsquared[idx][!is.na(hits$Rsquared[idx])] <- 
+						paste(hits$Rsquared[idx][!is.na(hits$Rsquared[idx])], 
+								r2[!is.na(hits$Rsquared[idx])], sep=",")
+			}
 		}
 	}
 	if(verbose) message(nrow(hits), " peaks found")
