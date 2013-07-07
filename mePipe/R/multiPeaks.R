@@ -195,23 +195,25 @@ getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, min
 	## for each peak, get list of proxy SNPs
 	if(nrow(hits) > 1){
 		ldTable <- subset(ldTable, !snp2 %in% hits$snps & snp1 %in% hits$snps)
-		assignedPeak <- by(ldTable, ldTable$snp2, function(x) {
-					i <- which.max(x$Rsquared) 
-					list(peak=x[i, "snp1"], Rsquared=x[i, "Rsquared"])
-				})
-		peaks <- sapply(assignedPeak, '[[', "peak")
-		proxies <- tapply(names(assignedPeak), peaks, paste, collapse=",")
-		r2 <- sapply(assignedPeak, '[[', "Rsquared")
-		r2 <- tapply(r2, peaks, paste, collapse=",")
-		idx <- match(names(proxies), as.character(hits$snps))
-		hits$others[idx][is.na(hits$others[idx])] <- proxies[is.na(hits$others[idx])]
-		hits$others[idx][!is.na(hits$others[idx])] <- 
-				paste(hits$others[idx][!is.na(hits$others[idx])], 
-						proxies[!is.na(hits$others[idx])], sep=",")
-		hits$Rsquared[idx][is.na(hits$Rsquared[idx])] <- r2[is.na(hits$Rsquared[idx])]
-		hits$Rsquared[idx][!is.na(hits$Rsquared[idx])] <- 
-				paste(hits$Rsquared[idx][!is.na(hits$Rsquared[idx])], 
-						r2[!is.na(hits$Rsquared[idx])], sep=",")
+		if(nrow(ldTable)){
+			assignedPeak <- by(ldTable, ldTable$snp2, function(x) {
+						i <- which.max(x$Rsquared) 
+						list(peak=x[i, "snp1"], Rsquared=x[i, "Rsquared"])
+					})
+			peaks <- sapply(assignedPeak, '[[', "peak")
+			proxies <- tapply(names(assignedPeak), peaks, paste, collapse=",")
+			r2 <- sapply(assignedPeak, '[[', "Rsquared")
+			r2 <- tapply(r2, peaks, paste, collapse=",")
+			idx <- match(names(proxies), as.character(hits$snps))
+			hits$others[idx][is.na(hits$others[idx])] <- proxies[is.na(hits$others[idx])]
+			hits$others[idx][!is.na(hits$others[idx])] <- 
+					paste(hits$others[idx][!is.na(hits$others[idx])], 
+							proxies[!is.na(hits$others[idx])], sep=",")
+			hits$Rsquared[idx][is.na(hits$Rsquared[idx])] <- r2[is.na(hits$Rsquared[idx])]
+			hits$Rsquared[idx][!is.na(hits$Rsquared[idx])] <- 
+					paste(hits$Rsquared[idx][!is.na(hits$Rsquared[idx])], 
+							r2[!is.na(hits$Rsquared[idx])], sep=",")
+		}
 	}
 	if(verbose) message(nrow(hits), " peaks found")
 	hits
