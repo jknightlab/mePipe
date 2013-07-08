@@ -128,8 +128,8 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				me1$all$eqtls$Rsquared <- NA
 				me1$all$eqtls$finalPvalue <- NA
 				## only keep SNPs for which p-value doesn't increase
-				idx <- match(as.character(me1$all$eqtls$snps), as.character(hits$snps[-(1:depth)]))
-				me1$all$eqtls <- subset(me1$all$eqtls, me1$all$eqtls$pvalue <= hits$pvalue[idx])
+				#idx <- match(as.character(me1$all$eqtls$snps), as.character(hits$snps[-(1:depth)]))
+				#me1$all$eqtls <- subset(me1$all$eqtls, me1$all$eqtls$pvalue <= hits$pvalue[idx])
 			}
 			newPeak <- FALSE
 			while(nrow(me1$all$eqtls) && !newPeak){
