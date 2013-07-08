@@ -26,39 +26,46 @@
 #' 
 #' @author Peter Humburg
 #' @export
-getMultiPeak <- function(hits, pvalue=1e-6, expression, genotype, covariate, minFDR,
+getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, minFDR,
 		minR, exprOpt=getOptions(), genoOpt=getOptions(), covOpt=getOptions(), output, ...){
-	## create data objects
-	## gene expression
-	gene <- NULL
-	if(is(expression, "SlicedData")){
-		gene <- expression
-	} else{
-		gene <- loadData(expression, exprOpt)
-	}
-	## genotypes
-	snps <- NULL
-	if(is(genotype, "SlicedData")){
-		snps <- genotype
-	} else{
-		snps <- loadData(genotype, genoOpt)
-	}
-	cvrt <- NULL
-	if(!missing(covariate)){
-		if(is(covariate, "SlicedData")){
-			cvrt <- Reduce(combineSlicedData, covariate)
+	## only use peaks that reach significance
+	hits <- subset(hits, pvalue <= p.value)
+	complete <- cbind(subset(hits, FALSE), others=character(), Rsquared=character(),
+			finalPvalue=numeric())
+	
+	if(nrow(hits)){
+		## create data objects
+		## gene expression
+		gene <- NULL
+		if(is(expression, "SlicedData")){
+			gene <- expression
 		} else{
-			cvrt <- loadCovariates(covariate, covOpt)
+			gene <- loadData(expression, exprOpt)
 		}
+		## genotypes
+		snps <- NULL
+		if(is(genotype, "SlicedData")){
+			snps <- genotype
+		} else{
+			snps <- loadData(genotype, genoOpt)
+		}
+		cvrt <- NULL
+		if(!missing(covariate)){
+			if(is(covariate, "SlicedData")){
+				cvrt <- Reduce(combineSlicedData, covariate)
+			} else{
+				cvrt <- loadCovariates(covariate, covOpt)
+			}
+		}
+		
+		complete <- Rsge::sge.parLapply(unique(as.character(hits$gene)), .submitMultiPeak, 
+				hits, p.value, gene, snps, cvrt, minR, minFDR, ..., packages=.getPackageNames())
+		
+		complete <- do.call(rbind, complete)
+		complete <- complete[order(complete[["pvalue"]]), ]
+		## TODO: update FDR estimates
+		
 	}
-	
-	complete <- Rsge::sge.parLapply(unique(as.character(hits$gene)), .submitMultiPeak, 
-			hits, pvalue, gene, snps, cvrt, minR, minFDR, ..., packages=.getPackageNames())
-	
-	complete <- do.call(rbind, complete)
-	complete <- complete[order(complete[["pvalue"]]), ]
-	## TODO: update FDR estimates
-	
 	complete
 }
 
