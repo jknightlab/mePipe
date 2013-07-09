@@ -81,6 +81,21 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 	if(verbose) message("Processing gene ", current, " (", nrow(hits), " eSNPs)")
 	
 	if(nrow(hits)){
+		peakPos <- subset(snppos, snp == as.character(hits$snps[1]))
+		candidates <- subset(snppos, chrom == peakPos$chrom & pos <= peakPos$pos + window & 
+						pos >= peakPos$pos - window)$snp
+		
+		## Fit model for all SNPs that were previously filtered out
+		tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "others", "", sep="_"), 
+				tmpdir=".", fileext=".tmp")
+		tryCatch(
+				me1 <- runME(expression, do.call(combineSlicedData, 
+								geno[candidates[!candidates %in% hit$snps]]), 
+						covariate, output=tmp1, threshold=1, cisThreshold=0, cis=0, 
+						cluster=FALSE, ...),
+				finally=unlink(paste0(tmp1, "*"))
+		)
+		hits <- rbind(hits, me1$all$eqtls)
 		hits$var.explained <- NA
 		hits$improvement <- NA
 		hits$adj.r.squared <- NA
@@ -88,11 +103,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		hits$Rsquared <- NA
 		hits$finalStatistic <- NA
 		hits$finalPvalue <- NA
-		
-		
-		peakPos <- subset(snppos, snp == as.character(hits$snps[1]))
-		candidates <- subset(snppos, chrom == peakPos$chrom & pos <= peakPos$pos + window & 
-						pos >= peakPos$pos - window)$snp
+		hits$minPvalue <- hits$pvalue
 		
 		depth <- 1
 		hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR)
@@ -126,9 +137,10 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		
 		peaks <- as.character(hits$snps[1])
 		
-		while(nrow(hits) > depth){
+		## iterate until no more significant SNPs are found
+		while(TRUE){
 			genoIdx <- which(names(geno) %in% peaks)
-			genoRemain <- which(names(geno) %in% candidates)
+			genoRemain <- which(names(geno) %in% as.character(hits$snps)[-(1:depth)])
 			## Fit model including peak SNP(s) and one other candidate
 			tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
 					tmpdir=".", fileext=".tmp")
@@ -159,16 +171,19 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				me1$all$eqtls$Rsquared <- NA
 				me1$all$eqtls$finalStatistic <- NA
 				me1$all$eqtls$finalPvalue <- NA
-				## only keep SNPs for which p-value doesn't increase
-				#idx <- match(as.character(me1$all$eqtls$snps), as.character(hits$snps[-(1:depth)]))
-				#me1$all$eqtls <- subset(me1$all$eqtls, me1$all$eqtls$pvalue <= hits$pvalue[idx])
+				me1$all$eqtls$minPvalue <- me1$all$eqtls$minPvalue 
+				
+				## update minimum p-value where appropriate
+				idx <- match(as.character(hits$snps), as.character(me1$all$eqtls$snps))
+				hits$minPvalue <- ifelse(me1$all$eqtls$pvalue[idx] < hits$minPvalue,
+						me1$all$eqtls$pvalue[idx], hits$minPvalue)
+			} else {
+				break
 			}
 			newPeak <- FALSE
 			while(nrow(me1$all$eqtls) && !newPeak){
 				## ensure that inclusion of the next most significant eSNP will
 				## improve model fit
-				
-
 				## fit model including covariates, all previous peaks and 
 				## the most significant remaining SNP
 				tmpData <- cbind(t(geno[[as.character(me1$all$eqtls$snps[1])]][[1]]), 
@@ -188,6 +203,8 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 					
 					cov.df <- tmpData
 					newPeak <- TRUE
+				} else {
+					hits <- subset(hits, snps != as.character(me1$all$eqtls$snps[1]))
 				}
 				me1$all$eqtls <- me1$all$eqtls[-1, ]
 			}
@@ -200,23 +217,17 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 			}
 			hits <- hits[order(hits$var.explained, hits$finalPvalue), ]
 			
-			## SNPs that are no longer significant
-			remove <- subset(hits, !snps %in% c(as.character(me1$all$eqtls$snps), peaks))
-			
 			## compute LD between remaining SNPs and new peak
-			if(nrow(me1$all$eqtls) + nrow(remove) > 0){
+			if(nrow(me1$all$eqtls) > 0){
 				secondaryLD <- .computeLD(rbind(hits[peaks[length(peaks)], ], 
 								me1$all$eqtls, remove), genotype, current,
 						maxP=NULL, minR=minR)
 				ldTable <- rbind(ldTable, secondaryLD$proxies)
 			}
 			## remove all SNPs in high LD with new peak
-			hits <- subset(hits, !as.character(snps) %in% remove$snps & 
-							!as.character(snps) %in% subset(secondaryLD$proxies, 
+			hits <- subset(hits, !as.character(snps) %in% subset(secondaryLD$proxies, 
 									snp1==peaks[length(peaks)] & Rsquared >= minR)$snp2)
 			rm(secondaryLD)
-			candidates <- subset(candidates, !candidates %in% peaks & 
-							!candidates %in% remove$snps)
 			
 			depth <- depth + 1
 		}
