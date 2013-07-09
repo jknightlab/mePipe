@@ -75,7 +75,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 #' @author Peter Humburg
 #' @keywords internal
 .submitMultiPeak <- function(current, hits, pvalue, expression, genotype, covariate, 
-		minR, minFDR, snppos, verbose=FALSE, ...){
+		minR, minFDR, snppos, window, verbose=FALSE, ...){
 	hits <- subset(hits, gene == current & FDR <= minFDR)
 	
 	if(verbose) message("Processing gene ", current, " (", nrow(hits), " eSNPs)")
