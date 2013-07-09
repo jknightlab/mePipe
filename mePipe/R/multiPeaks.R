@@ -80,7 +80,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 	
 	if(verbose) message("Processing gene ", current, " (", nrow(hits), " eSNPs)")
 	
-	if(nrow(hits) && any(hits$FDR) <= minFDR){
+	if(nrow(hits) && any(hits$FDR <= minFDR)){
 		peakPos <- subset(snppos, snp == as.character(hits$snps[1]))
 		candidates <- subset(snppos, chrom == peakPos$chrom & pos <= peakPos$pos + window & 
 						pos >= peakPos$pos - window & snp %in% genotype$GetAllRowNames)$snp
