@@ -102,14 +102,14 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		expression <- tmpExpr
 		
 		## extract all candidate SNPs (including primary peak)
-		geno <- subsetRows(genotype, unique(hits$snps))
+		geno <- subsetRows(genotype, unique(as.character(hits$snps)))
 		
 		## model without genetic effdects
 		cov.df <- as.data.frame(t(as.matrix(covariate)))
 		fit <- lm(t(expression[[1]]) ~ ., data=cov.df)
 		baseline <- summary(fit)
 		
-		cov.df <- cbind(t(geno[[hits$snps[1]]][[1]]), cov.df)
+		cov.df <- cbind(t(geno[[as.character(hits$snps[1])]][[1]]), cov.df)
 		fit <- lm(t(expression[[1]]) ~ ., data=cov.df)
 		fitSummary <- summary(fit)
 		
@@ -117,7 +117,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		hits$improvement[1] <- fitSummary$r.squared - baseline$r.squared
 		hits$adj.r.squared[1] <- fitSummary$adj.r.sq
 		
-		peaks <- hits$snps[1]
+		peaks <- as.character(hits$snps[1])
 		
 		while(nrow(hits) > depth){
 			genoIdx <- which(names(geno) %in% peaks)
@@ -160,16 +160,16 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 
 				## fit model including covariates, all previous peaks and 
 				## the most significant remaining SNP
-				tmpData <- cbind(t(as.matrix(geno[as.character(me1$all$eqtls$snps[1])])), 
+				tmpData <- cbind(t(geno[[as.character(me1$all$eqtls$snps[1])]][[1]]), 
 						cov.df)
-				fit <- lm(expression[[1]] ~ ., data=tmpData)
+				fit <- lm(t(expression[[1]]) ~ ., data=tmpData)
 				fitSummary <- summary(fit)
 
-				if(fitSummary$adj.r.squared > hits$adj.r.squared[peaks[length(peaks)]]){
-					peaks <- c(peaks, me1$all$eqtls$snps[1])
-					idx <- match(reverse(peaks), as.character(hits$snps))
+				if(fitSummary$adj.r.squared > hits[peaks[length(peaks)], "adj.r.squared"]){
+					peaks <- c(peaks, as.character(me1$all$eqtls$snps[1]))
+					idx <- match(rev(peaks), as.character(hits$snps))
 					
-					peakUpdate$finalStatistic[idx] <- fitSummary$coefficients[2:(length(peaks)+1), 3]
+					hits$finalStatistic[idx] <- fitSummary$coefficients[2:(length(peaks)+1), 3]
 					hits$finalPvalue[idx] <- fitSummary$coefficients[2:(length(peaks)+1), 4]
 					hits$var.explained[idx[1]] <- fitSummary$r.squared
 					hits$adj.r.squared[idx[1]] <- fitSummary$adj.r.squared
@@ -187,14 +187,14 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				hits$finalPvalue[idx] <- me1$all$eqtls$pvalue
 				hits$finalStatistic[idx] <- me1$all$eqtls$statistic
 			}
-			hits <- hits[order(hits$finalPvalue), ]
+			hits <- hits[order(hits$var.explained, hits$finalPvalue), ]
 			
 			## SNPs that are no longer significant
 			remove <- subset(hits, !snps %in% c(as.character(me1$all$eqtls$snps), peaks))
 			
 			## compute LD between remaining SNPs and new peak
 			if(nrow(me1$all$eqtls) + nrow(remove) > 0){
-				secondaryLD <- .computeLD(rbind(hits[peaks[length(peaks)]], 
+				secondaryLD <- .computeLD(rbind(hits[peaks[length(peaks)], ], 
 								me1$all$eqtls, remove), genotype, current,
 						maxP=NULL, minR=minR)
 				ldTable <- rbind(ldTable, secondaryLD$proxies)
