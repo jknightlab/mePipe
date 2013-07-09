@@ -85,6 +85,8 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		candidates <- subset(snppos, chrom == peakPos$chrom & pos <= peakPos$pos + window & 
 						pos >= peakPos$pos - window)$snp
 		
+		## extract all candidate SNPs (including primary peak)
+		geno <- subsetRows(genotype, candidates)
 		## Fit model for all SNPs that were previously filtered out
 		tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "others", "", sep="_"), 
 				tmpdir=".", fileext=".tmp")
@@ -118,9 +120,6 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		tmpExpr <- SlicedData$new()
 		tmpExpr$CreateFromMatrix(expression$FindRow(current)$row)
 		expression <- tmpExpr
-		
-		## extract all candidate SNPs (including primary peak)
-		geno <- subsetRows(genotype, unique(as.character(hits$snps)))
 		
 		## model without genetic effdects
 		cov.df <- as.data.frame(t(as.matrix(covariate)))
