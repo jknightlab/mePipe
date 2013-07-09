@@ -27,7 +27,8 @@
 #' @author Peter Humburg
 #' @export
 getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, minFDR,
-		minR, exprOpt=getOptions(), genoOpt=getOptions(), covOpt=getOptions(), output, ...){
+		minR, snppos, window, exprOpt=getOptions(), genoOpt=getOptions(), 
+		covOpt=getOptions(), output, ...){
 	## only use peaks that reach significance
 	hits <- subset(hits, pvalue <= p.value)
 	complete <- cbind(subset(hits, FALSE), others=character(), Rsquared=character(),
@@ -57,9 +58,11 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				cvrt <- loadCovariates(covariate, covOpt)
 			}
 		}
-		
+		snppos <- read.table(snppos, header=TRUE, stringsAsFactors=FALSE)
+		names(snppos) <- c("snp", "chrom", "pos")
 		complete <- Rsge::sge.parLapply(unique(as.character(hits$gene)), .submitMultiPeak, 
-				hits, p.value, gene, snps, cvrt, minR, minFDR, ..., packages=.getPackageNames())
+				hits, p.value, gene, snps, cvrt, minR, minFDR, snppos, window, ..., 
+				packages=.getPackageNames())
 		
 		complete <- do.call(rbind, complete)
 		complete <- complete[order(complete[["pvalue"]]), ]
@@ -72,7 +75,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 #' @author Peter Humburg
 #' @keywords internal
 .submitMultiPeak <- function(current, hits, pvalue, expression, genotype, covariate, 
-		minR, minFDR, verbose=FALSE, ...){
+		minR, minFDR, snppos, verbose=FALSE, ...){
 	hits <- subset(hits, gene == current & FDR <= minFDR)
 	
 	if(verbose) message("Processing gene ", current, " (", nrow(hits), " eSNPs)")
@@ -86,6 +89,10 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		hits$finalStatistic <- NA
 		hits$finalPvalue <- NA
 		
+		
+		peakPos <- subset(snppos, snp == as.character(hits$snps[1]))
+		candidates <- subset(snppos, chrom == peakPos$chrom & pos <= peakPos + window & 
+						pos >= peakPos - window)
 		
 		depth <- 1
 		hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR)
@@ -115,13 +122,13 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		
 		hits$var.explained[1] <- fitSummary$r.squared
 		hits$improvement[1] <- fitSummary$r.squared - baseline$r.squared
-		hits$adj.r.squared[1] <- fitSummary$adj.r.sq
+		hits$adj.r.squared[1] <- fitSummary$adj.r.squared
 		
 		peaks <- as.character(hits$snps[1])
 		
 		while(nrow(hits) > depth){
 			genoIdx <- which(names(geno) %in% peaks)
-			genoRemain <- which(!names(geno) %in% peaks & names(geno) %in% hits$snps)
+			genoRemain <- which(names(geno) %in% candidates)
 			## Fit model including peak SNP(s) and one other candidate
 			tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
 					tmpdir=".", fileext=".tmp")
@@ -208,6 +215,8 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 							!as.character(snps) %in% subset(secondaryLD$proxies, 
 									snp1==peaks[length(peaks)] & Rsquared >= minR)$snp2)
 			rm(secondaryLD)
+			candidates <- subset(candidates, !candidates %in% peaks & 
+							!candidates %in% remove$snps)
 			
 			depth <- depth + 1
 		}
