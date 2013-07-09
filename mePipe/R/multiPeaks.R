@@ -230,6 +230,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 			
 			depth <- depth + 1
 		}
+		hits <- subset(hits, !is.na(var.explained))
 		## for each peak, get list of proxy SNPs
 		if(nrow(hits) > 1){
 			ldTable <- subset(ldTable, !snp2 %in% hits$snps & snp1 %in% hits$snps)
