@@ -91,8 +91,8 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		
 		
 		peakPos <- subset(snppos, snp == as.character(hits$snps[1]))
-		candidates <- subset(snppos, chrom == peakPos$chrom & pos <= peakPos + window & 
-						pos >= peakPos - window)
+		candidates <- subset(snppos, chrom == peakPos$chrom & pos <= peakPos$pos + window & 
+						pos >= peakPos$pos - window)
 		
 		depth <- 1
 		hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR)
