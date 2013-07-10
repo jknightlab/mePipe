@@ -109,7 +109,9 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		hits$Rsquared <- NA
 		hits$finalStatistic <- NA
 		hits$finalPvalue <- NA
+		hits$finalCoef <- NA
 		hits$minPvalue <- hits$pvalue
+		hits$maxCoef <- NA
 		hits$explained <- FALSE
 		
 		hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR)
@@ -137,6 +139,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		hits$var.explained[1] <- fitSummary$r.squared
 		hits$improvement[1] <- fitSummary$r.squared - baseline$r.squared
 		hits$adj.r.squared[1] <- fitSummary$adj.r.squared
+		hits$maxCoef[1] <- coef(fit)[2]
 		hits$explained[1] <- TRUE
 		
 		peaks <- as.character(hits$snps[1])
@@ -175,7 +178,9 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				me1$all$eqtls$Rsquared <- NA
 				me1$all$eqtls$finalStatistic <- NA
 				me1$all$eqtls$finalPvalue <- NA
-				me1$all$eqtls$minPvalue <- me1$all$eqtls$pvalue 
+				me1$all$eqtls$finalCoef <- NA
+				me1$all$eqtls$minPvalue <- me1$all$eqtls$pvalue
+				me1$all$eqtls$minCoef <- NA
 				me1$all$eqtls$explained <- FALSE
 				
 				## update minimum p-value where appropriate
@@ -198,9 +203,16 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 						cov.df)
 				fit <- lm(t(expression[[1]]) ~ ., data=tmpData)
 				fitSummary <- summary(fit)
-
+				
+				changed <- hits[peaks, "minPval"] < fitSummary$coefficients[3:(length(peaks)+1), 4]
+				testCoef <- 1
+				if(any(changed)){
+					testCoef <- car::linearHypothesis(fit, peaks[changed], 
+							hits[peaks, "maxCoef"])[["Pr(>F)"]][2]
+				}
 				if(fitSummary$adj.r.squared > hits[peaks[length(peaks)], "adj.r.squared"] &&
-						all(fitSummary$coefficients[3:(length(peaks)+2), 4] < pvalue)){
+						all(fitSummary$coefficients[3:(length(peaks)+2), 4] < pvalue) && 
+						(!any(changed) || testCoef > 0.05)){
 					peaks <- c(peaks, as.character(me1$all$eqtls$snps[1]))
 					idx <- match(rev(peaks), as.character(hits$snps))
 					
