@@ -185,7 +185,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 						me1$all$eqtls$pvalue[idx], hits$minPvalue[-(1:length(peaks))], 
 						hits$pvalue[-(1:length(peaks))], na.rm=TRUE)
 			} else {
-				hits[names(genoRemain), "explained"] <- TRUE
+				hits[names(geno)[genoRemain], "explained"] <- TRUE
 				break
 			}
 			newPeak <- FALSE
@@ -214,7 +214,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 					cov.df <- tmpData
 					newPeak <- TRUE
 				} else {
-					hits[snps == as.character(me1$all$eqtls$snps[1])] <- TRUE 
+					hits[hits$snps == as.character(me1$all$eqtls$snps[1])] <- TRUE 
 				}
 				me1$all$eqtls <- me1$all$eqtls[-1, ]
 			}
