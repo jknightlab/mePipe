@@ -218,7 +218,9 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 					
 					hits$finalStatistic[idx] <- fitSummary$coefficients[2:(length(peaks)+1), 3]
 					hits$finalPvalue[idx] <- fitSummary$coefficients[2:(length(peaks)+1), 4]
+					hits$finalCoef[idx] <- coef(fit)[2:(length(peaks)+1)]
 					hits$minPvalue[idx] <- pmin(hits$finalPvalue[idx], hits$minPvalue[idx], na.rm=TRUE)
+					hits$maxCoef[idx] <- sign(hits$finalCoef[idx])*pmax(abs(hits$finalCoef[idx]), hits$maxCoef[idx], na.rm=TRUE)
 					hits$var.explained[idx[1]] <- fitSummary$r.squared
 					hits$adj.r.squared[idx[1]] <- fitSummary$adj.r.squared
 					hits$improvement[idx[1]] <- hits$var.explained[idx[1]] - hits$var.explained[idx[2]]
