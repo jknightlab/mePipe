@@ -92,7 +92,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				tmpdir=".", fileext=".tmp")
 		tryCatch(
 				me1 <- runME(expression, do.call(combineSlicedData, 
-								geno[candidates[!candidates %in% hit$snps]]), 
+								geno[candidates[!candidates %in% hits$snps]]), 
 						covariate, output=tmp1, threshold=1, cisThreshold=0, cis=0, 
 						cluster=FALSE, ...),
 				finally=unlink(paste0(tmp1, "*"))
