@@ -181,9 +181,9 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				## update minimum p-value where appropriate
 				idx <- match(as.character(hits$snps[-(1:length(peaks))]), 
 						as.character(me1$all$eqtls$snps))
-				hits$minPvalue[-(1:length(peaks))] <- ifelse(
-						me1$all$eqtls$pvalue[idx] < hits$minPvalue[-(1:length(peaks))],
-						me1$all$eqtls$pvalue[idx], hits$minPvalue[-(1:length(peaks))])
+				hits$minPvalue[-(1:length(peaks))] <- pmin(
+						me1$all$eqtls$pvalue[idx], hits$minPvalue[-(1:length(peaks))], 
+						hits$pvalue[-(1:length(peaks))], na.rm=TRUE)
 			} else {
 				hits[names(genoRemain), "explained"] <- TRUE
 				break
@@ -205,6 +205,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 					
 					hits$finalStatistic[idx] <- fitSummary$coefficients[2:(length(peaks)+1), 3]
 					hits$finalPvalue[idx] <- fitSummary$coefficients[2:(length(peaks)+1), 4]
+					hits$minPvalue[idx] <- pmin(hits$finalPvalue[idx], hits$minPvalue[idx], na.rm=TRUE)
 					hits$var.explained[idx[1]] <- fitSummary$r.squared
 					hits$adj.r.squared[idx[1]] <- fitSummary$adj.r.squared
 					hits$improvement[idx[1]] <- hits$var.explained[idx[1]] - hits$var.explained[idx[2]]
