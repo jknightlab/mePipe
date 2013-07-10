@@ -65,7 +65,8 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				packages=.getPackageNames())
 		
 		complete <- do.call(rbind, complete)
-		complete <- complete[order(complete[["pvalue"]]), ]
+		complete <- complete[order(complete[["gene"]], complete[["var.explained"]], 
+						complete[["minPvalue"]]), ]
 		## TODO: update FDR estimates
 		
 	}
@@ -283,7 +284,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 	}
 	hits <- subset(hits, !is.na(var.explained))
 	hits <- hits[, -ncol(hits)]
-	hits <- hits[order(hits$var.explained),]
+
 	if(verbose) message(nrow(hits), " peaks found")
 	hits
 }
