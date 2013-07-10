@@ -106,6 +106,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		hits$finalStatistic <- NA
 		hits$finalPvalue <- NA
 		hits$minPvalue <- hits$pvalue
+		hits$explained <- FALSE
 		
 		depth <- 1
 		hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR)
@@ -113,7 +114,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		ldTable <- hitsLD$proxies
 		rm(hitsLD)
 		
-		hits <- subset(hits, !snps %in% subset(ldTable, Rsquared >= minR)$snp2)
+		hits$explained[snps %in% subset(ldTable, Rsquared >= minR)$snp2] <- TRUE
 		rownames(hits) <- hits$snps
 		
 		## restrict gene expression data to current gene
@@ -133,13 +134,14 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		hits$var.explained[1] <- fitSummary$r.squared
 		hits$improvement[1] <- fitSummary$r.squared - baseline$r.squared
 		hits$adj.r.squared[1] <- fitSummary$adj.r.squared
+		hits$explained[1] <- TRUE
 		
 		peaks <- as.character(hits$snps[1])
 		
 		## iterate until no more significant SNPs are found
-		while(TRUE){
+		while(any(!hits$explained)){
 			genoIdx <- which(names(geno) %in% peaks)
-			genoRemain <- which(names(geno) %in% as.character(hits$snps)[-(1:depth)])
+			genoRemain <- which(names(geno) %in% as.character(hits$snps)[!hits$explained])
 			## Fit model including peak SNP(s) and one other candidate
 			tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "secondaries", "", sep="_"), 
 					tmpdir=".", fileext=".tmp")
@@ -171,12 +173,14 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				me1$all$eqtls$finalStatistic <- NA
 				me1$all$eqtls$finalPvalue <- NA
 				me1$all$eqtls$minPvalue <- me1$all$eqtls$minPvalue 
+				me1$all$eqtls$explained <- FALSE
 				
 				## update minimum p-value where appropriate
 				idx <- match(as.character(hits$snps), as.character(me1$all$eqtls$snps))
 				hits$minPvalue <- ifelse(me1$all$eqtls$pvalue[idx] < hits$minPvalue,
 						me1$all$eqtls$pvalue[idx], hits$minPvalue)
 			} else {
+				hits[names(genoRemain), "explained"] <- TRUE
 				break
 			}
 			newPeak <- FALSE
@@ -199,11 +203,12 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 					hits$var.explained[idx[1]] <- fitSummary$r.squared
 					hits$adj.r.squared[idx[1]] <- fitSummary$adj.r.squared
 					hits$improvement[idx[1]] <- hits$var.explained[idx[1]] - hits$var.explained[idx[2]]
+					hits$explained[idx[1]] <- TRUE
 					
 					cov.df <- tmpData
 					newPeak <- TRUE
 				} else {
-					hits <- subset(hits, snps != as.character(me1$all$eqtls$snps[1]))
+					hits[snps == as.character(me1$all$eqtls$snps[1])] <- TRUE 
 				}
 				me1$all$eqtls <- me1$all$eqtls[-1, ]
 			}
@@ -224,16 +229,18 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				ldTable <- rbind(ldTable, secondaryLD$proxies)
 			}
 			## remove all SNPs in high LD with new peak
-			hits <- subset(hits, !as.character(snps) %in% subset(secondaryLD$proxies, 
-									snp1==peaks[length(peaks)] & Rsquared >= minR)$snp2)
+			hits$explained[as.character(snps) %in% subset(secondaryLD$proxies, 
+									snp1==peaks[length(peaks)] & Rsquared >= minR)$snp2] <- TRUE
 			rm(secondaryLD)
 			
 			depth <- depth + 1
 		}
-		hits <- subset(hits, !is.na(var.explained))
+		## remove SNPs that never reach significance
+		hits <- subset(hits, minPvalue > pvalue)
+		
 		## for each peak, get list of proxy SNPs
-		if(nrow(hits) > 1){
-			ldTable <- subset(ldTable, !snp2 %in% hits$snps & snp1 %in% hits$snps)
+		if(length(peaks) > 1){
+			ldTable <- subset(ldTable, snp1 %in% peaks & snp2 %in% hits$snps[-(1:depth)])
 			if(nrow(ldTable)){
 				assignedPeak <- by(ldTable, ldTable$snp2, function(x) {
 							i <- which.max(x$Rsquared) 
@@ -255,6 +262,8 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 			}
 		}
 	}
+	hits <- subset(hits, !is.na(var.explained))
+	hits <- hits[, -ncol(hits)]
 	if(verbose) message(nrow(hits), " peaks found")
 	hits
 }
