@@ -87,6 +87,10 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		
 		## extract all candidate SNPs (including primary peak)
 		geno <- subsetRows(genotype, candidates)
+		
+		## extract current gene
+		expression <- subsetRows(expression, current)[[1]]
+		
 		## Fit model for all SNPs that were previously filtered out
 		tmp1 <- tempfile(pattern=paste(current, hits$snps[1], "others", "", sep="_"), 
 				tmpdir=".", fileext=".tmp")
@@ -114,7 +118,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		ldTable <- hitsLD$proxies
 		rm(hitsLD)
 		
-		hits$explained[snps %in% subset(ldTable, Rsquared >= minR)$snp2] <- TRUE
+		hits$explained[hits$snps %in% subset(ldTable, Rsquared >= minR)$snp2] <- TRUE
 		rownames(hits) <- hits$snps
 		
 		## restrict gene expression data to current gene
@@ -229,7 +233,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				ldTable <- rbind(ldTable, secondaryLD$proxies)
 			}
 			## remove all SNPs in high LD with new peak
-			hits$explained[as.character(snps) %in% subset(secondaryLD$proxies, 
+			hits$explained[as.character(hits$snps) %in% subset(secondaryLD$proxies, 
 									snp1==peaks[length(peaks)] & Rsquared >= minR)$snp2] <- TRUE
 			rm(secondaryLD)
 			
