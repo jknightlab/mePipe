@@ -239,7 +239,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 			}
 		}
 		## remove SNPs that never reach significance
-		hits <- subset(hits, minPvalue > pvalue)
+		hits <- hits[hits$minPvalue <= pvalue,]
 		
 		## for each peak, get list of proxy SNPs
 		if(length(peaks) > 1){
