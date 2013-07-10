@@ -215,7 +215,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 					cov.df <- tmpData
 					newPeak <- TRUE
 				} else {
-					hits[hits$snps == as.character(me1$all$eqtls$snps[1])] <- TRUE 
+					hits$explained[hits$snps == as.character(me1$all$eqtls$snps[1])] <- TRUE 
 				}
 				me1$all$eqtls <- me1$all$eqtls[-1, ]
 			}
