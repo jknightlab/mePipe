@@ -15,7 +15,8 @@ Depends:
 Imports:
     MatrixEQTL,
     trio,
-    XML
+    XML,
+    car
 Suggests:
     optparse
 Collate:
