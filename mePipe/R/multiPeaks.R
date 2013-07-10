@@ -199,7 +199,8 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				fit <- lm(t(expression[[1]]) ~ ., data=tmpData)
 				fitSummary <- summary(fit)
 
-				if(fitSummary$adj.r.squared > hits[peaks[length(peaks)], "adj.r.squared"]){
+				if(fitSummary$adj.r.squared > hits[peaks[length(peaks)], "adj.r.squared"] &&
+						all(fitSummary$coefficients[3:(length(peaks)+2), 4] < pvalue)){
 					peaks <- c(peaks, as.character(me1$all$eqtls$snps[1]))
 					idx <- match(rev(peaks), as.character(hits$snps))
 					
