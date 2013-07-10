@@ -283,7 +283,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 	}
 	hits <- subset(hits, !is.na(var.explained))
 	hits <- hits[, -ncol(hits)]
-	hits <- hits[order(hits$var.explained)]
+	hits <- hits[order(hits$var.explained),]
 	if(verbose) message(nrow(hits), " peaks found")
 	hits
 }
