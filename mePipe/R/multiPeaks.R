@@ -112,7 +112,6 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		hits$minPvalue <- hits$pvalue
 		hits$explained <- FALSE
 		
-		depth <- 1
 		hitsLD <- .computeLD(hits, genotype, current, maxP=NULL, minR=minR)
 		hits[1,] <- hitsLD$groups
 		ldTable <- hitsLD$proxies
@@ -176,13 +175,15 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				me1$all$eqtls$Rsquared <- NA
 				me1$all$eqtls$finalStatistic <- NA
 				me1$all$eqtls$finalPvalue <- NA
-				me1$all$eqtls$minPvalue <- me1$all$eqtls$minPvalue 
+				me1$all$eqtls$minPvalue <- me1$all$eqtls$pvalue 
 				me1$all$eqtls$explained <- FALSE
 				
 				## update minimum p-value where appropriate
-				idx <- match(as.character(hits$snps), as.character(me1$all$eqtls$snps))
-				hits$minPvalue <- ifelse(me1$all$eqtls$pvalue[idx] < hits$minPvalue,
-						me1$all$eqtls$pvalue[idx], hits$minPvalue)
+				idx <- match(as.character(hits$snps[-(1:length(peaks))]), 
+						as.character(me1$all$eqtls$snps))
+				hits$minPvalue[-(1:length(peaks))] <- ifelse(
+						me1$all$eqtls$pvalue[idx] < hits$minPvalue[-(1:length(peaks))],
+						me1$all$eqtls$pvalue[idx], hits$minPvalue[-(1:length(peaks))])
 			} else {
 				hits[names(genoRemain), "explained"] <- TRUE
 				break
@@ -236,15 +237,13 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 			hits$explained[as.character(hits$snps) %in% subset(secondaryLD$proxies, 
 									snp1==peaks[length(peaks)] & Rsquared >= minR)$snp2] <- TRUE
 			rm(secondaryLD)
-			
-			depth <- depth + 1
 		}
 		## remove SNPs that never reach significance
 		hits <- subset(hits, minPvalue > pvalue)
 		
 		## for each peak, get list of proxy SNPs
 		if(length(peaks) > 1){
-			ldTable <- subset(ldTable, snp1 %in% peaks & snp2 %in% hits$snps[-(1:depth)])
+			ldTable <- subset(ldTable, snp1 %in% peaks & snp2 %in% hits$snps[-(1:length(peaks))])
 			if(nrow(ldTable)){
 				assignedPeak <- by(ldTable, ldTable$snp2, function(x) {
 							i <- which.max(x$Rsquared) 
