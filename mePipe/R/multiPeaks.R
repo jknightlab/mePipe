@@ -245,13 +245,15 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 			ldTable <- subset(ldTable, snp1 %in% peaks & snp2 %in% hits$snps[-(1:length(peaks))])
 			if(nrow(ldTable)){
 				assignedPeak <- by(ldTable, ldTable$snp2, function(x) {
-							i <- which.max(x$Rsquared) 
-							list(peak=x[i, "snp1"], Rsquared=x[i, "Rsquared"])
+							if(nrow(x)){
+								i <- which.max(x$Rsquared) 
+								list(peak=x[i, "snp1"], Rsquared=x[i, "Rsquared"])
+							} else NA
 						})
-				peaks <- sapply(assignedPeak, '[[', "peak")
-				proxies <- tapply(names(assignedPeak), peaks, paste, collapse=",")
+				peak <- sapply(assignedPeak, '[[', "peak")
+				proxies <- tapply(names(assignedPeak), peak, paste, collapse=",")
 				r2 <- sapply(assignedPeak, '[[', "Rsquared")
-				r2 <- tapply(r2, peaks, paste, collapse=",")
+				r2 <- tapply(r2, peak, paste, collapse=",")
 				idx <- match(names(proxies), as.character(hits$snps))
 				hits$others[idx][is.na(hits$others[idx])] <- proxies[is.na(hits$others[idx])]
 				hits$others[idx][!is.na(hits$others[idx])] <- 
