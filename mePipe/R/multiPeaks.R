@@ -231,11 +231,11 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				secondaryLD <- .computeLD(hits[-(1:(length(peaks)-1)), ], genotype, current,
 						maxP=NULL, minR=minR)
 				ldTable <- rbind(ldTable, secondaryLD$proxies)
+				## mark all SNPs in high LD with new peak
+				hits$explained[as.character(hits$snps) %in% subset(secondaryLD$proxies, 
+								snp1==peaks[length(peaks)] & Rsquared >= minR)$snp2] <- TRUE
+				rm(secondaryLD)
 			}
-			## remove all SNPs in high LD with new peak
-			hits$explained[as.character(hits$snps) %in% subset(secondaryLD$proxies, 
-									snp1==peaks[length(peaks)] & Rsquared >= minR)$snp2] <- TRUE
-			rm(secondaryLD)
 		}
 		## remove SNPs that never reach significance
 		hits <- subset(hits, minPvalue > pvalue)
