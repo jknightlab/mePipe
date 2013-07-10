@@ -228,8 +228,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 			
 			## compute LD between remaining SNPs and new peak
 			if(nrow(me1$all$eqtls) > 0){
-				secondaryLD <- .computeLD(rbind(hits[peaks[length(peaks)], ], 
-								me1$all$eqtls, remove), genotype, current,
+				secondaryLD <- .computeLD(hits[-(1:(length(peaks)-1)), ], genotype, current,
 						maxP=NULL, minR=minR)
 				ldTable <- rbind(ldTable, secondaryLD$proxies)
 			}
