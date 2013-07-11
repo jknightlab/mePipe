@@ -62,9 +62,8 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		names(snppos) <- c("snp", "chrom", "pos")
 		complete <- Rsge::sge.parLapply(unique(as.character(hits$gene)), .submitMultiPeak, 
 				hits, p.value, gene, snps, cvrt, minR, minFDR, snppos, window, ..., 
-				packages=.getPackageNames())
+				packages=.getPackageNames(), join.method=rbind)
 		
-		complete <- do.call(rbind, complete)
 		complete <- complete[order(complete[["gene"]], complete[["var.explained"]], 
 						complete[["minPvalue"]]), ]
 		## TODO: update FDR estimates
