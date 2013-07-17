@@ -559,9 +559,12 @@ if(opt$multiPeak){
 			subPC$CreateFromMatrix(pc[[1]])
 			allCovariates <- c(subPC, covariates)
 		}
-		multi <- getMultiPeak(me$all$eqtls, opt$multiPvalue, 
-				arguments$args[1], arguments$arg[2], allCovariates, opt$ldFDR,
-				opt$ldR2, opt$snpspos,opt$cisdist,fileOptions, fileOptions, fileOptions, output=opt$output, 
+		multi <- getMultiPeak(mhits=me$all$eqtls, p.value=opt$multiPvalue, 
+				expression=arguments$args[1], genotype=arguments$arg[2], 
+				covariate=allCovariates, minFDR=opt$ldFDR,
+				minR=opt$ldR2, snppos=opt$snpspos,window=opt$cisdist, 
+				exprOpt=fileOptions, genoOpt=fileOptions, 
+				covOpt=fileOptions, output=opt$output, 
 				error=opt$error, model=opt$model, verbose=opt$verbose)
 		write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
 				quote=FALSE, sep="\t")
@@ -578,10 +581,12 @@ if(opt$multiPeak){
 				subPC$CreateFromMatrix(pc[[1]])
 				cisCovariates <- c(subPC, covariates)
 			}
-			multi <- getMultiPeak(me$cis$eqtls, opt$multiPvalue, 
-					arguments$args[1], arguments$arg[2], cisCovariates, opt$ldFDR,
-					opt$ldR2, opt$snpspos,opt$cisdist, fileOptions, fileOptions, 
-					fileOptions, output=opt$output, 
+			multi <- getMultiPeak(hits=me$cis$eqtls, p.value=opt$multiPvalue, 
+					expression=arguments$args[1], genotype=arguments$arg[2], 
+					covariate=cisCovariates, minFDR=opt$ldFDR,
+					minR=opt$ldR2, snppos=opt$snpspos,window=opt$cisdist, 
+					exprOpt=fileOptions, genoOpt=fileOptions, 
+					covOpt=fileOptions, output=opt$output, 
 					error=opt$error, model=opt$model, verbose=opt$verbose)
 			write.table(multi, file=paste(opt$cisoutput, "peaks", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")
@@ -598,10 +603,12 @@ if(opt$multiPeak){
 				subPC$CreateFromMatrix(pc[[1]])
 				transCovariates <- c(subPC, covariates)
 			}
-			multi <- getMultiPeak(me$trans$eqtls, opt$multiPvalue, 
-					arguments$args[1], arguments$arg[2], transCovariates, opt$ldFDR,
-					opt$ldR2, opt$snpspos,opt$cisdist, fileOptions, fileOptions, 
-					fileOptions, output=opt$output, 
+			multi <- getMultiPeak(hits=me$trans$eqtls, p.value=opt$multiPvalue, 
+					expression=arguments$args[1], genotype=arguments$arg[2], 
+					covariate=transCovariates, minFDR=opt$ldFDR,
+					minR=opt$ldR2, snppos=opt$snpspos,window=opt$cisdist, 
+					exprOpt=fileOptions, genoOpt=fileOptions, 
+					covOpt=fileOptions, output=opt$output, 
 					error=opt$error, model=opt$model, verbose=opt$verbose)
 			write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")
