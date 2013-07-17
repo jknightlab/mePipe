@@ -30,7 +30,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		minR, snppos, window, exprOpt=getOptions(), genoOpt=getOptions(), 
 		covOpt=getOptions(), output, ...){
 	## only use peaks that reach significance
-	hits <- subset(hits, pvalue <= p.value)
+	hits <- subset(hits, FDR <= minFDR)
 	complete <- cbind(subset(hits, FALSE), others=character(), Rsquared=character(),
 			finalPvalue=numeric())
 	
