@@ -66,7 +66,6 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		complete <- do.call(rbind, complete)
 		complete <- complete[order(complete[["gene"]], complete[["var.explained"]], 
 						complete[["minPvalue"]]), ]
-		## TODO: update FDR estimates
 		
 	}
 	complete
