@@ -43,6 +43,8 @@ option_list <- list(
 				help = "Name of file containing error covariance matrix"),
 		make_option(c("--cluster"), action="store_true", default=FALSE,
 				help="Submit jobs to SGE cluster instead of running locally. Note that this will only work when running on a login node of the cluster."),
+		make_option("--sgeoptions", default="-S /bin/bash -V",
+				help="Options to pass to qsub (ignored unless `--cluster` is used. [default: %default])"),
 		make_option(c('--selectcov'), default = FALSE, action = 'store_true',
 				help = "Flag indicating whether covariates should be selected from the file given by option 'pca'. [default: %default]"),
 		make_option(c('--filtercov'), default = FALSE, action = 'store_true',
@@ -301,7 +303,7 @@ if(!opt$ldOnly) message(" R objects: ", paste(opt$output, "rdata", sep = '.'))
 message("")
 
 ## set-up environment for Rsge
-sge.options(sge.use.cluster=opt$cluster, sge.user.options="-S /bin/bash -V", sge.trace=opt$verbose)
+sge.options(sge.use.cluster=opt$cluster, sge.user.options=opt$sgeoptions, sge.trace=opt$verbose)
 
 ## initialise number of principle components to use
 selected <- list(selected=list(all=opt$allcov, cis=opt$ciscov, trans=opt$transcov))
