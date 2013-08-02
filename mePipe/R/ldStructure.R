@@ -305,6 +305,15 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 	if(nrow(eqtls) > 1){
 		## create CubeX input file for all pairs including the peak SNP
 		snpMat <- toCubeX(geno, as.character(eqtls$snps))
+		
+		## identify monomorphic SNPs and remove them
+		monoIdx <- apply(snpMat, 1, function(x){
+					sum(x[4:9]) == 0 || sum(x[-c(1,4,7)]) == 0
+				})
+		if(any(monoIdx)){
+			snpMat <- snpMat[!monoIdx, , drop=FALSE]
+			eqtls<- eqtls[!monoIdx, ]
+		}
 		if(nrow(snpMat)){
 			tmp <- tempfile(pattern=paste(selGene, eqtls$snps[1], "", sep="_"), 
 					tmpdir=".", fileext=".tmp")
