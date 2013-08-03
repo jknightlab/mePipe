@@ -17,7 +17,10 @@
 #' @param covariat List of covariates to use. These can either be given as file names 
 #' or a \code{slicedData} objects.
 #' @param minFDR Minimum FDR for associations to be considered.
-#' @param minR Minimum R-squared at which two eSNPs will be assumed to have no independent effect.
+#' @param minR Minimum R-squared at which two eSNPs will be assumed to have no independent 
+#' effect.
+#' @param geneID If this argument is provided only associations with the given 
+#' gene are considered.
 #' @param exprOpt Options for reading of gene expression file. 
 #' @param genoOpt Options for reading of gene expression file.
 #' @param covOpt Options for reading of gene expression file.
@@ -27,10 +30,11 @@
 #' @author Peter Humburg
 #' @export
 getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, minFDR,
-		minR, snppos, window, exprOpt=getOptions(), genoOpt=getOptions(), 
+		minR, snppos, window, geneID, exprOpt=getOptions(), genoOpt=getOptions(), 
 		covOpt=getOptions(), output, ...){
 	## only use peaks that reach significance
 	hits <- subset(hits, FDR <= minFDR)
+	if(!missing(geneID) && !is.null(geneID)) hits <- subset(hits, gene == geneID)
 	complete <- cbind(subset(hits, FALSE), others=character(), Rsquared=character(),
 			finalPvalue=numeric())
 	

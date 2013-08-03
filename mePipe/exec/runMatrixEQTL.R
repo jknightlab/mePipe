@@ -81,6 +81,8 @@ option_list <- list(
 				help="Flag indicating whether an attempt should be made to resolve multiple independent eSNPs for the same gene via multiple regression. [default: %default]"),
 		make_option(c("--multiPvalue"), default=1e-6,
 				help="P-value threshold to use for associations between secondary eSNPs and gene expression measurements. [default: %default]"),
+		make_option("--multiGene", meta="GENE",
+				help="Restrict conditional analysis to this gene"),
 		make_option(c("--ldBlocks"), action="store_true", default=FALSE,
 				help="Flag indicating whether eQTLs should be summarised by LD block. [default: %default]"),
 		make_option(c("--ldPairs"), action="store_true", default=FALSE,
@@ -564,7 +566,8 @@ if(opt$multiPeak){
 		multi <- getMultiPeak(mhits=me$all$eqtls, p.value=opt$multiPvalue, 
 				expression=arguments$args[1], genotype=arguments$arg[2], 
 				covariate=allCovariates, minFDR=opt$ldFDR,
-				minR=opt$ldR2, snppos=opt$snpspos,window=opt$cisdist, 
+				minR=opt$ldR2, snppos=opt$snpspos,window=opt$cisdist,
+				geneID=opt$multiGene,
 				exprOpt=fileOptions, genoOpt=fileOptions, 
 				covOpt=fileOptions, output=opt$output, 
 				error=opt$error, model=opt$model, verbose=opt$verbose)
@@ -586,7 +589,8 @@ if(opt$multiPeak){
 			multi <- getMultiPeak(hits=me$cis$eqtls, p.value=opt$multiPvalue, 
 					expression=arguments$args[1], genotype=arguments$arg[2], 
 					covariate=cisCovariates, minFDR=opt$ldFDR,
-					minR=opt$ldR2, snppos=opt$snpspos,window=opt$cisdist, 
+					minR=opt$ldR2, snppos=opt$snpspos,window=opt$cisdist,
+					geneID=opt$multiGene,
 					exprOpt=fileOptions, genoOpt=fileOptions, 
 					covOpt=fileOptions, output=opt$output, 
 					error=opt$error, model=opt$model, verbose=opt$verbose)
@@ -608,7 +612,8 @@ if(opt$multiPeak){
 			multi <- getMultiPeak(hits=me$trans$eqtls, p.value=opt$multiPvalue, 
 					expression=arguments$args[1], genotype=arguments$arg[2], 
 					covariate=transCovariates, minFDR=opt$ldFDR,
-					minR=opt$ldR2, snppos=opt$snpspos,window=opt$cisdist, 
+					minR=opt$ldR2, snppos=opt$snpspos,window=opt$cisdist,
+					geneID=opt$multiGene,
 					exprOpt=fileOptions, genoOpt=fileOptions, 
 					covOpt=fileOptions, output=opt$output, 
 					error=opt$error, model=opt$model, verbose=opt$verbose)
