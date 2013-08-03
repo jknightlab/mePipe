@@ -551,6 +551,10 @@ if(opt$multiPeak){
 	fileOptions <- getOptions(sep = opt$delim, missing = opt$missing, 
 			rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice)
 	covInput <- if(opt$filtercov) opt$filterpca else opt$pcacov
+	prefix <- ""
+	if(!is.null(opt$multiGene)){
+		prefix <- opt$multiGene
+	}
 	if(doAll){
 		message("Resolving multiple peaks...")
 		allCovariates <- covariates
@@ -571,7 +575,7 @@ if(opt$multiPeak){
 				exprOpt=fileOptions, genoOpt=fileOptions, 
 				covOpt=fileOptions, output=opt$output, 
 				error=opt$error, model=opt$model, verbose=opt$verbose)
-		write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
+		write.table(multi, file=paste(opt$output, prefix, "peaks", sep="_"), row.names=FALSE,
 				quote=FALSE, sep="\t")
 	} else{
 		if(doCis){
@@ -594,7 +598,8 @@ if(opt$multiPeak){
 					exprOpt=fileOptions, genoOpt=fileOptions, 
 					covOpt=fileOptions, output=opt$output, 
 					error=opt$error, model=opt$model, verbose=opt$verbose)
-			write.table(multi, file=paste(opt$cisoutput, "peaks", sep="_"), row.names=FALSE,
+			write.table(multi, file=paste(opt$cisoutput, prefix, "peaks", sep="_"), 
+					row.names=FALSE,
 					quote=FALSE, sep="\t")
 		}
 		if(doTrans){
@@ -617,7 +622,8 @@ if(opt$multiPeak){
 					exprOpt=fileOptions, genoOpt=fileOptions, 
 					covOpt=fileOptions, output=opt$output, 
 					error=opt$error, model=opt$model, verbose=opt$verbose)
-			write.table(multi, file=paste(opt$output, "peaks", sep="_"), row.names=FALSE,
+			write.table(multi, file=paste(opt$output, prefix, "peaks", sep="_"), 
+					row.names=FALSE,
 					quote=FALSE, sep="\t")
 		}
 	}
