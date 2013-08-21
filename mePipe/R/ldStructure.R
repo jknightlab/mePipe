@@ -308,7 +308,8 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 		
 		## identify monomorphic SNPs and remove them
 		monoIdx <- apply(snpMat, 1, function(x){
-					sum(x[4:9]) == 0 || sum(x[-c(1,4,7)]) == 0
+					sum(x[4:9]) == 0 || sum(x[-c(1,4,7)]) == 0 || sum(x[1:6]) == 0 || 
+							sum(x[-c(3,6,9)]) == 0 
 				})
 		if(any(monoIdx)){
 			snpMat <- snpMat[!monoIdx, , drop=FALSE]
