@@ -313,7 +313,7 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 				})
 		if(any(monoIdx)){
 			snpMat <- snpMat[!monoIdx, , drop=FALSE]
-			eqtls<- eqtls[!monoIdx, ]
+			eqtls<- eqtls[-(which(monoIdx)+1), ]
 		}
 		if(nrow(snpMat)){
 			tmp <- tempfile(pattern=paste(selGene, eqtls$snps[1], "", sep="_"), 
