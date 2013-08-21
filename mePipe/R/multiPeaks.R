@@ -210,8 +210,10 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				changed <- hits[peaks, "minPvalue"] < fitSummary$coefficients[3:(length(peaks)+2), 4]
 				testCoef <- 1
 				if(any(changed)){
+					varNames <- ifelse(peaks[changed] == make.names(peaks[changed]), 
+							peaks[changed], paste0("`", peaks[changed], "`"))
 					testCoef <- car::linearHypothesis(fit, 
-							paste0("`", peaks[changed], "` = ", 
+							paste0(varNames, " = ", 
 									hits[peaks[changed], "maxCoef"]))[["Pr(>F)"]][2]
 				}
 				if(fitSummary$adj.r.squared > hits[peaks[length(peaks)], "adj.r.squared"] && 
