@@ -323,13 +323,14 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 			## get list of R-sq between peak SNP and all other SNPs
 			## that have significant associations with that gene
 			outFile <- paste(tmp, "out", sep="_")
-			command <- paste("python", system.file(file.path("exec", "cubex-cl.py"), package="mePipe"), 
-					tmp, ">", outFile)
+			command <- paste("python", system.file(file.path("exec", "cubex-cl.py"), 
+							package="mePipe"), tmp, ">", outFile)
 			system(command)
 			
 			## parse CubeX output
 			cubexOut <- XML::xmlTreeParse(outFile)
-			cubexOut <- lapply(XML::xmlChildren(cubexOut$doc$children[["dataset"]]), XML::xmlToList)
+			cubexOut <- lapply(XML::xmlChildren(cubexOut$doc$children[["dataset"]]), 
+					XML::xmlToList)
 			## extract r^2 of most likely solution (assuming HWE and random mating)
 			rsq <- numeric()
 			for(i in 1:length(cubexOut)){
@@ -341,7 +342,8 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 				thisR <- as.numeric(result[[paste0(solution, "rsquared")]])
 				if(is.null(solution)){
 					rsq <- c(rsq, NA)
-					warning("No solution found for SNP pair ", eqtls$snps[1], ", ", eqtls$snps[i+1])
+					warning("No solution found for SNP pair ", eqtls$snps[1], ", ", 
+							eqtls$snps[i+1])
 				} else {
 					rsq <- c(rsq, thisR)
 				}
@@ -361,7 +363,8 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 			
 			if(nrow(selectedProxies) >= 1){
 				selected$others <- paste(selectedProxies$snp2, collapse=",")
-				selected$Rsquared <- paste(sprintf("%.03f", selectedProxies$Rsquared), collapse=",")
+				selected$Rsquared <- paste(sprintf("%.03f", selectedProxies$Rsquared), 
+						collapse=",")
 			} 
 			
 			## clean-up
