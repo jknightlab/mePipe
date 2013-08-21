@@ -150,7 +150,8 @@ def cubex(inputarray):
 
     elif yN2 == h2:
         # option 2
-        delta = math.pow((yN/2.0*a),(1.0/3.0))
+        base = yN/2.0*a
+        delta = math.copysign(math.pow(abs(base),(1.0/3.0)), base) ## changed from math.pow((yN/2.0*a),(1.0/3.0)) to avoid failing when (yN/2.0*a) is negative
         result["inputdata"] = str(inputarray)
         result["alpha"] = xN + delta
         result["beta"] = xN + delta
