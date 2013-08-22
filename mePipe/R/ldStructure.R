@@ -313,9 +313,9 @@ getLDpairs <- function(eqtls, genotype, minFDR=0.05, maxP=NULL, minR=0.8, genoOp
 				})
 		if(any(monoIdx)){
 			snpMat <- snpMat[!monoIdx, , drop=FALSE]
-			eqtls<- eqtls[-(which(monoIdx)+1), ]
 		}
 		if(nrow(snpMat)){
+			eqtls <- subset(eqtls, snps %in% c(as.character(snps[1]), rownames(snpMat)))
 			tmp <- tempfile(pattern=paste(selGene, eqtls$snps[1], "", sep="_"), 
 					tmpdir=".", fileext=".tmp")
 			write.table(snpMat, file=tmp, row.names=FALSE, col.names=FALSE, sep="\t", quote=FALSE)
