@@ -262,7 +262,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		hits <- hits[hits$minPvalue <= pvalue,]
 		
 		## for each peak, get list of proxy SNPs
-		if(length(peaks) > 1){
+		if(length(peaks) > 0){
 			ldTable <- subset(ldTable, snp1 %in% peaks & snp2 %in% hits$snps[-(1:length(peaks))])
 			if(nrow(ldTable)){
 				assignedPeak <- by(ldTable, ldTable$snp2, function(x) {
