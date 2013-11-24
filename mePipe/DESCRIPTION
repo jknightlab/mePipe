@@ -16,7 +16,8 @@ Imports:
     MatrixEQTL,
     trio,
     XML,
-    car
+    car,
+    lmSupport
 Suggests:
     optparse
 Collate:
