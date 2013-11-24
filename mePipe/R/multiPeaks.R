@@ -106,6 +106,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		)
 		hits <- rbind(hits, me1$all$eqtls)
 		hits$var.explained <- NA
+		hits$effect.size <- NA
 		hits$improvement <- NA
 		hits$adj.r.squared <- NA
 		hits$others <- NA
@@ -132,18 +133,17 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		
 		## model without genetic effdects
 		cov.df <- as.data.frame(t(as.matrix(covariate)))
-		fit <- lm(t(expression[[1]]) ~ ., data=cov.df)
-		baseline <- summary(fit)
-		
-		cov.df <- cbind(t(geno[[as.character(hits$snps[1])]][[1]]), cov.df)
-		fit <- lm(t(expression[[1]]) ~ ., data=cov.df)
-		fitSummary <- summary(fit)
+		baseline <- fitStats(expression=t(expression[[1]]), covariates=cov.df)
+		fitSummary <- fitStats(expression=t(expression[[1]]), 
+				genotype=t(geno[[as.character(hits$snps[1])]][[1]]), covariates=cov.df)
 		
 		hits$var.explained[1] <- fitSummary$r.squared
+		hits$effect.size[1] <- fitSummary$pr2[2]
 		hits$improvement[1] <- fitSummary$r.squared - baseline$r.squared
 		hits$adj.r.squared[1] <- fitSummary$adj.r.squared
-		hits$maxCoef[1] <- coef(fit)[2]
+		hits$maxCoef[1] <- fitSummary$coefficients[2,1]
 		hits$explained[1] <- TRUE
+		
 		
 		peaks <- as.character(hits$snps[1])
 		
@@ -202,10 +202,8 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				## improve model fit
 				## fit model including covariates, all previous peaks and 
 				## the most significant remaining SNP
-				tmpData <- cbind(t(geno[[as.character(me1$all$eqtls$snps[1])]][[1]]), 
+				fitSummary <- fitStats(t(expression[[1]]), t(geno[[as.character(me1$all$eqtls$snps[1])]][[1]]),
 						cov.df)
-				fit <- lm(t(expression[[1]]) ~ ., data=tmpData)
-				fitSummary <- summary(fit)
 				
 				changed <- hits[peaks, "minPvalue"] < fitSummary$coefficients[3:(length(peaks)+2), 4]
 				testCoef <- 1
@@ -223,15 +221,16 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 					
 					hits$finalStatistic[idx] <- fitSummary$coefficients[2:(length(peaks)+1), 3]
 					hits$finalPvalue[idx] <- fitSummary$coefficients[2:(length(peaks)+1), 4]
-					hits$finalCoef[idx] <- coef(fit)[2:(length(peaks)+1)]
+					hits$finalCoef[idx] <- fitSummary$coeficients[2:(length(peaks)+1),1]
 					hits$minPvalue[idx] <- pmin(hits$finalPvalue[idx], hits$minPvalue[idx], na.rm=TRUE)
 					hits$maxCoef[idx] <- sign(hits$finalCoef[idx])*pmax(abs(hits$finalCoef[idx]), hits$maxCoef[idx], na.rm=TRUE)
 					hits$var.explained[idx[1]] <- fitSummary$r.squared
+					hits$effect.size[idx[1]] <- fitSummary$pr2[2:(length(peaks)+1)]
 					hits$adj.r.squared[idx[1]] <- fitSummary$adj.r.squared
 					hits$improvement[idx[1]] <- hits$var.explained[idx[1]] - hits$var.explained[idx[2]]
 					hits$explained[idx[1]] <- TRUE
 					
-					cov.df <- tmpData
+					cov.df <- cbind(t(geno[[as.character(me1$all$eqtls$snps[1])]][[1]]), cov.df)
 					newPeak <- TRUE
 				} else {
 					hits$explained[hits$snps == as.character(me1$all$eqtls$snps[1])] <- TRUE 
@@ -292,4 +291,23 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 
 	if(verbose) message(nrow(hits), " peaks found")
 	hits
+}
+
+#' Obtain model summaries for Matrix-eQTL model 
+#' @param expression vector of expression values
+#' @param genotype vector of genotypes
+#' @param \code{data.frame} of covariates
+#' @return A list as produced by \code{summary.lm} with additional entry \code{pr2} giving the partial
+#' r^2 for all effects in the model.
+#' 
+#' @author Peter Humburg
+#' @export
+fitStats <- function(expression, genotype, covariates){
+	if(!missing(genotype)) covariates <- cbind(genotype, covariates)
+	fit <- lm(expression ~ ., data=covariates)
+	fitSummary <- summary(fit)
+	fitSupport <- lmSupport::lm.sumSquares(fit)
+	fitSummary$pr2 <- fitSupport[1:(nrow(fitSupport)-2),"pEta-sqr"]
+	fitSummary$coef <- coef(fit)
+	fitSummary
 }
