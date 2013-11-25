@@ -68,7 +68,7 @@ getEffectSize <- function(hits, expression, genotype, covariate, minFDR, geneID,
 	
 	if(nrow(hits)){
 		## extract current gene (or probe)
-		expr <- subsetRows(expr, current)[[1]]
+		expr <- t(as.matrix(subsetRows(expr, current)[[1]]))
 		
 		## extract all relevant SNPs
 		geno <- subsetRows(genotype, hits$snps)
