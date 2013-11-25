@@ -3,7 +3,7 @@
 \title{Compute effect size for all SNPs with significant associations.}
 \usage{
   getEffectSize(hits, expression, genotype, covariate,
-    minFDR)
+    minFDR, geneID)
 }
 \arguments{
   \item{hits}{A \code{data.frame} with eQTL results as
@@ -18,6 +18,9 @@
 
   \item{minFDR}{FDR threshold used to determine whether an
   association is significant.}
+
+  \item{geneID}{Restrict computations to the indicated
+  gene.}
 }
 \value{
   A \code{data.frame} similar to \code{hits} with two
