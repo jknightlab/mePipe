@@ -50,8 +50,6 @@ getEffectSize <- function(hits, expression, genotype, covariate, minFDR, geneID,
 				cvrt <- loadCovariates(covariate, covOpt)
 			}
 		}
-		snppos <- read.table(snppos, header=TRUE, stringsAsFactors=FALSE)
-		names(snppos) <- c("snp", "chrom", "pos")
 		
 		complete <- Rsge::sge.parLapply(unique(as.character(hits$gene)), 
 				.submitEffectSize, hits, gene, snps, cvrt, minFDR)
