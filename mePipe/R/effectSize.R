@@ -20,7 +20,7 @@
 #' @author Peter Humburg
 #' @export
 getEffectSize <- function(hits, expression, genotype, covariate, minFDR, geneID,
-		exprOpt, genoOpt, covOpt){
+		exprOpt, genoOpt, covOpt, ...){
 	## only compute effect size for SNPs that are deemed significant
 	hits <- subset(hits, FDR <= minFDR)
 	if(!missing(geneID) && !is.null(geneID)) hits <- subset(hits, gene == geneID)
@@ -60,7 +60,7 @@ getEffectSize <- function(hits, expression, genotype, covariate, minFDR, geneID,
 	complete
 }
 
-.submitEffectSize <- function(current, hits, expr, genotype, covariate, minFDR){
+.submitEffectSize <- function(current, hits, expr, genotype, covariate, minFDR, verbose=FALSE){
 	hits$var.explained <- NA
 	hits$effect.size <- NA
 	hits <- subset(hits, gene == current & FDR <= minFDR)
