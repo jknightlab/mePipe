@@ -2,6 +2,19 @@
 ## Author: Peter Humburg, 2013
 #############################################################
 
+#' Compute effect size for all SNPs with significant associations.
+#' @param hits A \code{data.frame} with eQTL results as produced by \code{Matrix-eQTL}
+#' @param expression Gene expression values.
+#' @param genotype Genotypes.
+#' @param covariate Additional covariates to include in the model.
+#' @param minFDR FDR threshold used to determine whether an association is significant.
+#' @return A \code{data.frame} similar to \code{hits} with two additional columns. Column
+#' \code{var.explained} gives the variance explained by the linear model that was fitted for 
+#' the SNP and column \code{effect.size} gives the variance explained by the genotype within
+#' this model (as measured by the partial r^2). 
+#' 
+#' @author Peter Humburg
+#' @export
 getEffectSize <- function(hits, expression, genotype, covariate, minFDR){
 	## only compute effect size for SNPs that are deemed significant
 	hits <- subset(hits, FDR <= minFDR)
