@@ -8,6 +8,7 @@
 #' @param genotype Genotypes.
 #' @param covariate Additional covariates to include in the model.
 #' @param minFDR FDR threshold used to determine whether an association is significant.
+#' @param geneID Restrict computations to the indicated gene.
 #' @return A \code{data.frame} similar to \code{hits} with two additional columns. Column
 #' \code{var.explained} gives the variance explained by the linear model that was fitted for 
 #' the SNP and column \code{effect.size} gives the variance explained by the genotype within
@@ -15,7 +16,7 @@
 #' 
 #' @author Peter Humburg
 #' @export
-getEffectSize <- function(hits, expression, genotype, covariate, minFDR){
+getEffectSize <- function(hits, expression, genotype, covariate, minFDR, geneID){
 	## only compute effect size for SNPs that are deemed significant
 	hits <- subset(hits, FDR <= minFDR)
 	if(!missing(geneID) && !is.null(geneID)) hits <- subset(hits, gene == geneID)

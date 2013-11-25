@@ -83,8 +83,8 @@ option_list <- list(
 				help="Flag indicating whether an attempt should be made to resolve multiple independent eSNPs for the same gene via multiple regression. [default: %default]"),
 		make_option(c("--multiPvalue"), default=1e-6,
 				help="P-value threshold to use for associations between secondary eSNPs and gene expression measurements. [default: %default]"),
-		make_option("--multiGene", meta="GENE",
-				help="Restrict conditional analysis to this gene"),
+		make_option(c("--multiGene", "--geneID"), meta="GENE",
+				help="Restrict analysis to this gene (for analyses that support this feature)"),
 		make_option(c("--ldBlocks"), action="store_true", default=FALSE,
 				help="Flag indicating whether eQTLs should be summarised by LD block. [default: %default]"),
 		make_option(c("--ldPairs"), action="store_true", default=FALSE,
@@ -636,6 +636,10 @@ if(opt$effectSize){
 	fileOptions <- getOptions(sep = opt$delim, missing = opt$missing, 
 			rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice)
 	covInput <- if(opt$filtercov) opt$filterpca else opt$pcacov
+	prefix <- ""
+	if(!is.null(opt$multiGene)){
+		prefix <- opt$multiGene
+	}
 	if(doAll){
 		cvrt <- NULL
 		if(!is.null(me$all$covariates) && me$all$covariates > 0){
@@ -648,8 +652,8 @@ if(opt$effectSize){
 			cvrt <- c(subPC, covariates)
 		}
 		hits <- getEffectSize(me$all$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
-				covariate=cvrt, minFDR=opt$ldFDR)
-		write.table(hits, file=paste(opt$output, es, sep="_"), row.names=FALSE,
+				covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene)
+		write.table(hits, file=paste(opt$output, prefix, "es", sep="_"), row.names=FALSE,
 				quote=FALSE, sep="\t")
 	} else{
 		if(doCis){
@@ -663,8 +667,8 @@ if(opt$effectSize){
 				subPC$CreateFromMatrix(pc[[1]])
 				cvrt <- c(subPC, covariates)
 				hits <- getEffectSize(me$cis$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
-						covariate=cvrt, minFDR=opt$ldFDR)
-				write.table(hits, file=paste(opt$cisoutput, es, sep="_"), row.names=FALSE,
+						covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene)
+				write.table(hits, file=paste(opt$cisoutput, prefix, "es", sep="_"), row.names=FALSE,
 						quote=FALSE, sep="\t")
 			}
 		}
@@ -679,8 +683,8 @@ if(opt$effectSize){
 				subPC$CreateFromMatrix(pc[[1]])
 				cvrt <- c(subPC, covariates)
 				hits <- getEffectSize(me$trans$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
-						covariate=cvrt, minFDR=opt$ldFDR)
-				write.table(hits, file=paste(opt$output, es, sep="_"), row.names=FALSE,
+						covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene)
+				write.table(hits, file=paste(opt$output, prefix, "es", sep="_"), row.names=FALSE,
 						quote=FALSE, sep="\t")
 			}
 		}
