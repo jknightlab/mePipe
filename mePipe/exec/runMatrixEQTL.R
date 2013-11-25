@@ -83,7 +83,7 @@ option_list <- list(
 				help="Flag indicating whether an attempt should be made to resolve multiple independent eSNPs for the same gene via multiple regression. [default: %default]"),
 		make_option(c("--multiPvalue"), default=1e-6,
 				help="P-value threshold to use for associations between secondary eSNPs and gene expression measurements. [default: %default]"),
-		make_option(c("--multiGene", "--geneID"), meta="GENE",
+		make_option(c("--multiGene"), meta="GENE",
 				help="Restrict analysis to this gene (for analyses that support this feature)"),
 		make_option(c("--ldBlocks"), action="store_true", default=FALSE,
 				help="Flag indicating whether eQTLs should be summarised by LD block. [default: %default]"),
@@ -121,8 +121,6 @@ option_list <- list(
 parser <- OptionParser(usage = "%prog [options] expression_file genotype_file", option_list=option_list)
 arguments <- parse_args(parser, positional_arguments = TRUE)
 opt <- arguments$options
-
-if(opt$ldOnly && !opt$ldBlocks) opt$ldPairs <- TRUE
 
 ## check that positional arguments are present
 if(length(arguments$args) < 2){
@@ -666,11 +664,11 @@ if(opt$effectSize){
 				subPC <- new("SlicedData")
 				subPC$CreateFromMatrix(pc[[1]])
 				cvrt <- c(subPC, covariates)
-				hits <- getEffectSize(me$cis$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
-						covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene)
-				write.table(hits, file=paste(opt$cisoutput, prefix, "es", sep="_"), row.names=FALSE,
-						quote=FALSE, sep="\t")
 			}
+			hits <- getEffectSize(me$cis$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
+					covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene)
+			write.table(hits, file=paste(opt$cisoutput, prefix, "es", sep="_"), row.names=FALSE,
+					quote=FALSE, sep="\t")
 		}
 		if(doTrans){
 			cvrt <- NULL
@@ -682,11 +680,11 @@ if(opt$effectSize){
 				subPC <- new("SlicedData")
 				subPC$CreateFromMatrix(pc[[1]])
 				cvrt <- c(subPC, covariates)
-				hits <- getEffectSize(me$trans$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
-						covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene)
-				write.table(hits, file=paste(opt$output, prefix, "es", sep="_"), row.names=FALSE,
-						quote=FALSE, sep="\t")
 			}
+			hits <- getEffectSize(me$trans$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
+					covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene)
+			write.table(hits, file=paste(opt$output, prefix, "es", sep="_"), row.names=FALSE,
+					quote=FALSE, sep="\t")
 		}
 	}
 }
