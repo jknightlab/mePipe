@@ -292,22 +292,3 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 	if(verbose) message(nrow(hits), " peaks found")
 	hits
 }
-
-#' Obtain model summaries for Matrix-eQTL model 
-#' @param expression vector of expression values
-#' @param genotype vector of genotypes
-#' @param \code{data.frame} of covariates
-#' @return A list as produced by \code{summary.lm} with additional entry \code{pr2} giving the partial
-#' r^2 for all effects in the model.
-#' 
-#' @author Peter Humburg
-#' @export
-fitStats <- function(expression, genotype, covariates){
-	if(!missing(genotype)) covariates <- cbind(genotype, covariates)
-	fit <- lm(expression ~ ., data=covariates)
-	fitSummary <- summary(fit)
-	fitSupport <- lmSupport::lm.sumSquares(fit)
-	fitSummary$pr2 <- fitSupport[1:(nrow(fitSupport)-2),"pEta-sqr"]
-	fitSummary$coef <- coef(fit)
-	fitSummary
-}
