@@ -3,7 +3,7 @@
 \title{Compute effect size for all SNPs with significant associations.}
 \usage{
   getEffectSize(hits, expression, genotype, covariate,
-    minFDR, geneID)
+    minFDR, geneID, exprOpt, genoOpt, covOpt)
 }
 \arguments{
   \item{hits}{A \code{data.frame} with eQTL results as
@@ -21,6 +21,15 @@
 
   \item{geneID}{Restrict computations to the indicated
   gene.}
+
+  \item{exprOpt}{Options for reading of gene expression
+  file.}
+
+  \item{genoOpt}{Options for reading of gene expression
+  file.}
+
+  \item{covOpt}{Options for reading of gene expression
+  file.}
 }
 \value{
   A \code{data.frame} similar to \code{hits} with two
