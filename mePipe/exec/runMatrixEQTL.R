@@ -639,7 +639,7 @@ if(opt$effectSize){
 		prefix <- opt$multiGene
 	}
 	if(doAll){
-		cvrt <- NULL
+		cvrt <- covariates
 		if(!is.null(me$all$covariates) && me$all$covariates > 0){
 			pc <- loadData(covInput, 
 					getOptions(sep = opt$delim, missing = opt$missing, 
@@ -656,7 +656,7 @@ if(opt$effectSize){
 				quote=FALSE, sep="\t")
 	} else{
 		if(doCis){
-			cvrt <- NULL
+			cvrt <- covariates
 			if(!is.null(me$cis$covariates) && me$cis$covariates > 0){
 				pc <- loadData(covInput, 
 						getOptions(sep = opt$delim, missing = opt$missing, 
@@ -673,7 +673,7 @@ if(opt$effectSize){
 					quote=FALSE, sep="\t")
 		}
 		if(doTrans){
-			cvrt <- NULL
+			cvrt <- covariates
 			if(!is.null(me$trans$covariates) && me$trans$covariates > 0){
 				pc <- loadData(covInput, 
 						getOptions(sep = opt$delim, missing = opt$missing, 
