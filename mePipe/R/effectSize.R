@@ -1,0 +1,69 @@
+## Functions to add effect size estimates to output
+## Author: Peter Humburg, 2013
+#############################################################
+
+getEffectSize <- function(hits, expression, genotype, covariate, minFDR){
+	## only compute effect size for SNPs that are deemed significant
+	hits <- subset(hits, FDR <= minFDR)
+	if(!missing(geneID) && !is.null(geneID)) hits <- subset(hits, gene == geneID)
+	complete <- cbind(subset(hits, FALSE), var.explained=numeric(), effect.size=numeric())
+	
+	if(nrow(hits)){
+		## create data objects
+		## gene expression
+		gene <- NULL
+		if(is(expression, "SlicedData")){
+			gene <- expression
+		} else{
+			gene <- loadData(expression, exprOpt)
+		}
+		## genotypes
+		snps <- NULL
+		if(is(genotype, "SlicedData")){
+			snps <- genotype
+		} else{
+			snps <- loadData(genotype, genoOpt)
+		}
+		cvrt <- NULL
+		if(!missing(covariate)){
+			if(is(covariate, "SlicedData")){
+				cvrt <- Reduce(combineSlicedData, covariate)
+			} else{
+				cvrt <- loadCovariates(covariate, covOpt)
+			}
+		}
+		snppos <- read.table(snppos, header=TRUE, stringsAsFactors=FALSE)
+		names(snppos) <- c("snp", "chrom", "pos")
+		
+		complete <- Rsge::sge.parLapply(unique(as.character(hits$gene)), 
+				.submitEffectSize, hits, gene, snps, cvrt, minFDR)
+		complete <- do.call(rbind, complete)
+		complete <- complete[order(complete[["FDR"]], complete[["effect.size"]]), ]
+		
+	}
+	complete
+}
+
+.submitEffectSize <- function(current, hits, expr, genotype, covariate, minFDR){
+	hits$var.explained <- NA
+	hits$effect.size <- NA
+	hits <- subset(hits, gene == current & FDR <= minFDR)
+	if(verbose) message("Processing gene ", current, " (", nrow(hits), " eSNPs)")
+	
+	if(nrow(hits)){
+		## extract current gene (or probe)
+		expr <- subsetRows(expr, current)[[1]]
+		
+		## extract all relevant SNPs
+		geno <- subsetRows(genotype, hits$snps)
+		
+		## fit model and get summary
+		for(i in 1:nrow(hits)){
+			fitSummary <- fitStats(expr, t(geno[[as.character(hits$snps[i])]][[1]]), 
+					as.data.frame(t(as.matrix(covariate))))
+			hits[i, "var.explained"] <- fitSummary$r.squared
+			hits[i, "effect.size"] <- fitSummary$pr2
+		}
+	}
+	hits
+}
