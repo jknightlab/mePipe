@@ -650,7 +650,8 @@ if(opt$effectSize){
 			cvrt <- c(subPC, covariates)
 		}
 		hits <- getEffectSize(me$all$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
-				covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene)
+				covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene,
+				exprOpt=fileOptions, genoOpt=fileOptions, covOpt=fileOptions)
 		write.table(hits, file=paste(opt$output, prefix, "es", sep="_"), row.names=FALSE,
 				quote=FALSE, sep="\t")
 	} else{
@@ -666,7 +667,8 @@ if(opt$effectSize){
 				cvrt <- c(subPC, covariates)
 			}
 			hits <- getEffectSize(me$cis$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
-					covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene)
+					covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene,
+					exprOpt=fileOptions, genoOpt=fileOptions, covOpt=fileOptions)
 			write.table(hits, file=paste(opt$cisoutput, prefix, "es", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")
 		}
@@ -682,7 +684,8 @@ if(opt$effectSize){
 				cvrt <- c(subPC, covariates)
 			}
 			hits <- getEffectSize(me$trans$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
-					covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene)
+					covariate=cvrt, minFDR=opt$ldFDR, geneID=opt$multiGene,
+					exprOpt=fileOptions, genoOpt=fileOptions, covOpt=fileOptions)
 			write.table(hits, file=paste(opt$output, prefix, "es", sep="_"), row.names=FALSE,
 					quote=FALSE, sep="\t")
 		}
