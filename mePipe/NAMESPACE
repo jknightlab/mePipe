@@ -1,6 +1,8 @@
 export(allCovariates)
 export(chooseCov)
 export(covAssoc)
+export(fitStats)
+export(getEffectSize)
 export(getLDblocks)
 export(getLDpairs)
 export(getMultiPeak)

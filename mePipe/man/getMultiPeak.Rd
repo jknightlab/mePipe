@@ -4,10 +4,10 @@
 Test the set of eSNPs associated with each gene to identify secondary peaks
 that are due to an independent effect rather than LD}
 \usage{
-  getMultiPeak(hits, pvalue = 1e-06, expression, genotype,
-    covariate, minFDR, minR, exprOpt = getOptions(),
-    genoOpt = getOptions(), covOpt = getOptions(), output,
-    ...)
+  getMultiPeak(hits, p.value = 1e-06, expression, genotype,
+    covariate, minFDR, minR, snppos, window, geneID,
+    exprOpt = getOptions(), genoOpt = getOptions(),
+    covOpt = getOptions(), output, ...)
 }
 \arguments{
   \item{hits}{\code{data.frame} with SNP-gene pairs and
@@ -33,6 +33,9 @@ that are due to an independent effect rather than LD}
 
   \item{minR}{Minimum R-squared at which two eSNPs will be
   assumed to have no independent effect.}
+
+  \item{geneID}{If this argument is provided only
+  associations with the given gene are considered.}
 
   \item{exprOpt}{Options for reading of gene expression
   file.}
