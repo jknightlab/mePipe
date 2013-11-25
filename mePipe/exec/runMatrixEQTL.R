@@ -76,7 +76,9 @@ option_list <- list(
 		make_option(c("--covout"), default = "[output]_covSelect",
 				help = "Name of output directory for covariate selection. This is interpreted relative to the output directory. [default: %default]"),
 		make_option(c("--sortedSNPs"), action="store_true", default=FALSE,
-				help="Flag indicationg whether the SNPs in 'snpspos' are sorted by genomic coordinate. [default: %default]"),
+				help="Flag indicating whether the SNPs in 'snpspos' are sorted by genomic coordinate. [default: %default]"),
+		make_option(c("--effectSize"), action="store_true", default=FALSE,
+				help="Flag indicating whether an effect size column should be added to the output. [defsult: %default]"),
 		make_option(c("--multiPeak"), action="store_true", default=FALSE,
 				help="Flag indicating whether an attempt should be made to resolve multiple independent eSNPs for the same gene via multiple regression. [default: %default]"),
 		make_option(c("--multiPvalue"), default=1e-6,
@@ -567,7 +569,7 @@ if(opt$multiPeak){
 			subPC$CreateFromMatrix(pc[[1]])
 			allCovariates <- c(subPC, covariates)
 		}
-		multi <- getMultiPeak(mhits=me$all$eqtls, p.value=opt$multiPvalue, 
+		multi <- getMultiPeak(hits=me$all$eqtls, p.value=opt$multiPvalue, 
 				expression=arguments$args[1], genotype=arguments$arg[2], 
 				covariate=allCovariates, minFDR=opt$ldFDR,
 				minR=opt$ldR2, snppos=opt$snpspos,window=opt$cisdist,
@@ -628,4 +630,61 @@ if(opt$multiPeak){
 		}
 	}
 }
+if(opt$effectSize){
+	message("Obtaining effect size estimates...")
+	covariates <- list(opt$covariate, opt$interaction)
+	fileOptions <- getOptions(sep = opt$delim, missing = opt$missing, 
+			rowskip = opt$rowskip, colskip = opt$colskip, slice = opt$slice)
+	covInput <- if(opt$filtercov) opt$filterpca else opt$pcacov
+	if(doAll){
+		cvrt <- NULL
+		if(!is.null(me$all$covariates) && me$all$covariates > 0){
+			pc <- loadData(covInput, 
+					getOptions(sep = opt$delim, missing = opt$missing, 
+							rowskip = opt$rowskip, colskip = opt$colskip, 
+							slice = me$all$covariates))
+			subPC <- new("SlicedData")
+			subPC$CreateFromMatrix(pc[[1]])
+			cvrt <- c(subPC, covariates)
+		}
+		hits <- getEffectSize(me$all$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
+				covariate=cvrt, minFDR=opt$ldFDR)
+		write.table(hits, file=paste(opt$output, es, sep="_"), row.names=FALSE,
+				quote=FALSE, sep="\t")
+	} else{
+		if(doCis){
+			cvrt <- NULL
+			if(!is.null(me$cis$covariates) && me$cis$covariates > 0){
+				pc <- loadData(covInput, 
+						getOptions(sep = opt$delim, missing = opt$missing, 
+								rowskip = opt$rowskip, colskip = opt$colskip, 
+								slice = me$cis$covariates))
+				subPC <- new("SlicedData")
+				subPC$CreateFromMatrix(pc[[1]])
+				cvrt <- c(subPC, covariates)
+				hits <- getEffectSize(me$cis$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
+						covariate=cvrt, minFDR=opt$ldFDR)
+				write.table(hits, file=paste(opt$cisoutput, es, sep="_"), row.names=FALSE,
+						quote=FALSE, sep="\t")
+			}
+		}
+		if(doTrans){
+			cvrt <- NULL
+			if(!is.null(me$trans$covariates) && me$trans$covariates > 0){
+				pc <- loadData(covInput, 
+						getOptions(sep = opt$delim, missing = opt$missing, 
+								rowskip = opt$rowskip, colskip = opt$colskip, 
+								slice = me$trans$covariates))
+				subPC <- new("SlicedData")
+				subPC$CreateFromMatrix(pc[[1]])
+				cvrt <- c(subPC, covariates)
+				hits <- getEffectSize(me$trans$eqtls, expression=arguments$args[1], genotype=arguments$args[2],
+						covariate=cvrt, minFDR=opt$ldFDR)
+				write.table(hits, file=paste(opt$output, es, sep="_"), row.names=FALSE,
+						quote=FALSE, sep="\t")
+			}
+		}
+	}
+}
+
 message("done.")
