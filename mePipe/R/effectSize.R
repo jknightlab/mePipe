@@ -24,7 +24,7 @@ getEffectSize <- function(hits, expression, genotype, covariate, minFDR, geneID,
 	## only compute effect size for SNPs that are deemed significant
 	hits <- subset(hits, FDR <= minFDR)
 	if(!missing(geneID) && !is.null(geneID)) hits <- subset(hits, gene == geneID)
-	complete <- cbind(subset(hits, FALSE), var.explained=numeric(), effect.size=numeric())
+	complete <- cbind(subset(hits, FALSE), r.squared=numeric(), partial.r.squared=numeric())
 	
 	if(nrow(hits)){
 		## create data objects
@@ -54,7 +54,7 @@ getEffectSize <- function(hits, expression, genotype, covariate, minFDR, geneID,
 		complete <- Rsge::sge.parLapply(unique(as.character(hits$gene)), 
 				.submitEffectSize, hits, gene, snps, cvrt, minFDR)
 		complete <- do.call(rbind, complete)
-		complete <- complete[order(complete[["FDR"]], complete[["effect.size"]]), ]
+		complete <- complete[order(complete[["FDR"]], complete[["partial.r.squared"]]), ]
 		
 	}
 	complete
@@ -77,8 +77,8 @@ getEffectSize <- function(hits, expression, genotype, covariate, minFDR, geneID,
 		for(i in 1:nrow(hits)){
 			fitSummary <- fitStats(expr, t(geno[[as.character(hits$snps[i])]][[1]]), 
 					as.data.frame(t(as.matrix(covariate))))
-			hits[i, "var.explained"] <- fitSummary$r.squared
-			hits[i, "effect.size"] <- fitSummary$pr2
+			hits[i, "r.squared"] <- fitSummary$r.squared
+			hits[i, "partial.r.squared"] <- fitSummary$pr2
 		}
 	}
 	hits
