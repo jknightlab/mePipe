@@ -267,6 +267,10 @@ if(doCis){
 		message(" Peak eSNPs identified by multiple regression for cis associations: ",
 				paste(opt$cisoutput, "peaks", sep="_"))
 	}
+	if(opt$effectSize){
+		message(" Effect sizes for cis associations: ",
+				paste(opt$cisoutput, "es", sep="_"))
+	}
 	if(doTrans){
 		if(!opt$ldOnly) message(" Trans associations: ", opt$output)
 		if(opt$ldBlocks){
@@ -285,6 +289,10 @@ if(doCis){
 			message(" Peak eSNPs identified by multiple regression for trans associations: ",
 					paste(opt$output, "peaks", sep="_"))
 		}
+		if(opt$effectSize){
+			message(" Effect sizes for trans associations: ",
+					paste(opt$output, "es", sep="_"))
+		}
 	}
 } else{
 	if(!opt$ldOnly) message(" All associations: ", opt$output)
@@ -299,6 +307,10 @@ if(doCis){
 	if(opt$multiPeak){
 		message(" Peak eSNPs identified by multiple regression for trans associations: ",
 				paste(opt$output, "peaks", sep="_"))
+	}
+	if(opt$effectSize){
+		message(" Effect sizes for all associations: ",
+				paste(opt$output, "es", sep="_"))
 	}
 }
 if(!opt$ldOnly) message(" R objects: ", paste(opt$output, "rdata", sep = '.'))
