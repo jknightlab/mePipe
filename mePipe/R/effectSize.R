@@ -61,8 +61,8 @@ getEffectSize <- function(hits, expression, genotype, covariate, minFDR, geneID,
 }
 
 .submitEffectSize <- function(current, hits, expr, genotype, covariate, minFDR, verbose=FALSE){
-	hits$var.explained <- NA
-	hits$effect.size <- NA
+	hits$r.squared <- NA
+	hits$partial.r.squared <- NA
 	hits <- subset(hits, gene == current & FDR <= minFDR)
 	if(verbose) message("Processing gene ", current, " (", nrow(hits), " eSNPs)")
 	
@@ -78,7 +78,7 @@ getEffectSize <- function(hits, expression, genotype, covariate, minFDR, geneID,
 			fitSummary <- fitStats(expr, t(geno[[as.character(hits$snps[i])]][[1]]), 
 					as.data.frame(t(as.matrix(covariate))))
 			hits[i, "r.squared"] <- fitSummary$r.squared
-			hits[i, "partial.r.squared"] <- fitSummary$pr2
+			hits[i, "partial.r.squared"] <- fitSummary$pr2[2]
 		}
 	}
 	hits
