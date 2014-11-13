@@ -164,8 +164,7 @@ loadCovariates <- function(files, options = getOptions()){
 }
 
 #' Combine two \code{SlicedData} objects
-#' @param x A \code{SlicedData} object
-#' @param y A \code{SlicedData} object
+#' @param ... \code{SlicedData} objects
 #' @return A \code{SlicedData} object containg the data from \code{x} and \code{y}
 #' 
 #' @author Peter Humburg

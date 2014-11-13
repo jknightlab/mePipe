@@ -87,7 +87,7 @@ loadData <- function(file, options){
 #' Obtain model summaries for Matrix-eQTL model 
 #' @param expression vector of expression values
 #' @param genotype vector of genotypes
-#' @param \code{data.frame} of covariates
+#' @param covariates \code{data.frame} of covariates
 #' @return A list as produced by \code{summary.lm} with additional entry \code{pr2} giving the partial
 #' r^2 for all effects in the model.
 #' 

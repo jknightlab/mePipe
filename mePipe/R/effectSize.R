@@ -12,6 +12,7 @@
 #' @param exprOpt Options for reading of gene expression file. 
 #' @param genoOpt Options for reading of gene expression file.
 #' @param covOpt Options for reading of gene expression file.
+#' @param ... Further arguments (currently ignored).
 #' @return A \code{data.frame} similar to \code{hits} with two additional columns. Column
 #' \code{var.explained} gives the variance explained by the linear model that was fitted for 
 #' the SNP and column \code{effect.size} gives the variance explained by the genotype within

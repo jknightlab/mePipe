@@ -20,14 +20,3 @@ Imports:
     lmSupport
 Suggests:
     optparse
-Collate:
-    'covariates.R'
-    'options.R'
-    'plotHist.R'
-    'plotQQ.R'
-    'runME.R'
-    'ldStructure.R'
-    'utils.R'
-    'plotCov.R'
-    'multiPeaks.R'
-    'effectSize.R'

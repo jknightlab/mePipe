@@ -22,6 +22,8 @@
 #' @param verbose Flag indicating whether additional progress information should be printed.
 #' @param qqplot Flag indicating whether a QQ plot of p-values should be generated 
 #' rather than a histogram.
+#' @param cluster Logical indicating whether SGE jobs should be generated 
+#' instead of running locally.
 #' @return The object returned by \code{\link[MatrixEQTL]{Matrix_eQTL_main}}
 #' @note Before calling this function a call to \code{sge.setDefaultOptions} has to be made.
 #' @author Peter Humburg

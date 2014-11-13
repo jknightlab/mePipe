@@ -8,17 +8,19 @@
 #' @param hits \code{data.frame} with SNP-gene pairs and associsted p-value, 
 #' as produced by Matrix-eQTL. Additional columns may be included. In particular,
 #' output from \code{getLDpairs} is accepted.
-#' @param pvalue P-value threshold for association between secondary SNP and 
+#' @param p.value P-value threshold for association between secondary SNP and 
 #' gene expression.
 #' @param expression Gene expression data. This can either be the file name 
 #' or a \code{slicedData} object. 
 #' @param genotype Genotype data. This can either be the file name 
 #' or a \code{slicedData} object.
-#' @param covariat List of covariates to use. These can either be given as file names 
+#' @param covariate List of covariates to use. These can either be given as file names 
 #' or a \code{slicedData} objects.
 #' @param minFDR Minimum FDR for associations to be considered.
 #' @param minR Minimum R-squared at which two eSNPs will be assumed to have no independent 
 #' effect.
+#' @param snppos Name of file with SNP positions.
+#' @param window Window size around peak SNP.
 #' @param geneID If this argument is provided only associations with the given 
 #' gene are considered.
 #' @param exprOpt Options for reading of gene expression file. 
@@ -31,7 +33,7 @@
 #' @export
 getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, minFDR,
 		minR, snppos, window, geneID, exprOpt=getOptions(), genoOpt=getOptions(), 
-		covOpt=getOptions(), output, ...){
+		covOpt=getOptions(), ...){
 	## only use peaks that reach significance
 	hits <- subset(hits, FDR <= minFDR)
 	if(!missing(geneID) && !is.null(geneID)) hits <- subset(hits, gene == geneID)
