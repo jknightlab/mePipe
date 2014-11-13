@@ -1,7 +1,7 @@
 Package: mePipe
 Type: Package
 Title: Matrix-eQTL pipeline
-Version: 1.3.3
+Version: 1.3.4
 Date: 2013-11-25
 Author: Peter Humburg
 Maintainer: Peter Humburg <humburg@well.ox.ac.uk>
