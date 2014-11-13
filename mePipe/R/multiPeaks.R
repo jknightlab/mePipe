@@ -148,6 +148,8 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 		peaks <- as.character(hits$snps[1])
 		
 		## iterate until no more significant SNPs are found
+		## TODO: if there are significant SNPs remaining make sure they stay 
+		## stay significant if alternatives to the current top SNP are used.
 		while(any(!hits$explained)){
 			genoIdx <- which(names(geno) %in% peaks)
 			genoRemain <- which(names(geno) %in% as.character(hits$snps)[!hits$explained])
@@ -192,6 +194,7 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				hits$minPvalue[-(1:length(peaks))] <- pmin(
 						me1$all$eqtls$pvalue[idx], hits$minPvalue[-(1:length(peaks))], 
 						hits$pvalue[-(1:length(peaks))], na.rm=TRUE)
+				
 			} else {
 				hits[names(geno)[genoRemain], "explained"] <- TRUE
 				break
@@ -202,8 +205,8 @@ getMultiPeak <- function(hits, p.value=1e-6, expression, genotype, covariate, mi
 				## improve model fit
 				## fit model including covariates, all previous peaks and 
 				## the most significant remaining SNP
-				fitSummary <- fitStats(t(expression[[1]]), t(geno[[as.character(me1$all$eqtls$snps[1])]][[1]]),
-						cov.df)
+				fitSummary <- fitStats(t(expression[[1]]), 
+						t(geno[[as.character(me1$all$eqtls$snps[1])]][[1]]), cov.df)
 				
 				changed <- hits[peaks, "minPvalue"] < fitSummary$coefficients[3:(length(peaks)+2), 4]
 				testCoef <- 1
