@@ -148,9 +148,20 @@ to genetic effects. Several mechanisms are provided by *mePipe* to either [utili
 files](#predefined-covariates) with data for covariates or to [generate a file](#pca-covariates) 
 with covariates from the data.
 
-## Predefined covariates {#pca-covariates}
+## Predefined covariates 
+Often additional data are available for the samples in a study. For example,
+gender and age are commonly recorded and some studies come with a substantially
+larger set of phenotypic information. Some of these variables may have a large
+impact on gene expression. Including relevant variables in the analysis allows
+the corresponding variation in gene expression to be attributed properly, 
+preventing it from obscuring a, possibly much weaker, SNP effect.
 
-## Selecting principle components as covariates
+The `--covariate` option can be used to provide a file with one variable per line,
+using the same separator as the other input files. All variables contained in
+this file will be included in the model for each gene/SNP pair.
+
+## Selecting principle components as covariates {#pca-covariates}
+
 
 ## Testing for interactions between SNPs and a single covariate
 
