@@ -15,7 +15,7 @@ SGE compute cluster.
 The mePipe package requires R version 2.15 or newer to run and the following R packages have to be available. 
 If they are not already present they need to be installed before mePipe:
 * [MatrixEQTL](http://www.bios.unc.edu/research/genomic_software/Matrix_eQTL/)
-* [trio](http://cran.r-project.org/web/packages/trio/index.html)
+* [trio](http://www.bioconductor.org/packages/release/bioc/html/trio.html)
 * [optparse](https://github.com/trevorld/optparse)
 * [XML](http://cran.r-project.org/web/packages/XML/index.html)
 * [Rsge](https://github.com/humburg/Rsge)
