@@ -156,7 +156,7 @@ cis associations (`foo.cis`).
 
 ## Running mePipe on SGE {#oncluster}
 ### Setting up the environment
-The [http://cran.r-project.org/web/packages/XML/index.html XML] package relies on 
+The [XML](http://cran.r-project.org/web/packages/XML/index.html) package relies on 
 XML libraries to be available on the system. These have to be available on the compute 
 nodes.
 
@@ -170,7 +170,7 @@ runMatrixEQTL.R --output=foo  --snpspos=snp_pos --genepos=gene_pos --cisDist=5e6
 ```
 This will automatically submit jobs to the compute nodes and collate results at the end. 
 Note that the script will continue to run until all jobs have completed. It may therefore 
-be advisable to use (nohub)[http://en.wikipedia.org/wiki/Nohup].
+be advisable to use [nohup](http://en.wikipedia.org/wiki/Nohup).
 
 
 ## Plotting the p-value distribution
