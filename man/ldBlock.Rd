@@ -19,7 +19,7 @@ sorted by position.}
 \item{window}{Size of window around \code{snp} (in number of SNPs) in which LD
 calculations are carried out.}
 
-\item{...}{Further arguments to \code{\link[trio]{findLDBlocks}}}
+\item{...}{Further arguments to \code{\link[trio]{findLDblocks}}}
 }
 \value{
 A list with components \code{chrom}, \code{start}, \code{end} and \code{snps}.
