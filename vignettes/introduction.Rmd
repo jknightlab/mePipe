@@ -161,7 +161,17 @@ using the same separator as the other input files. All variables contained in
 this file will be included in the model for each gene/SNP pair.
 
 ## Selecting principle components as covariates {#pca-covariates}
-
+Although it is useful to account for known covariates, the sources of variation
+in gene expression are often unknown. One strategy to address this issue relies
+on the use of principle component analysis (PCA) to identify the main directions of 
+variation. Including the predominant principle components (PC) as covariates
+in the analysis has the advantage that no detailed knowledge of possible
+confounders is required. It does require, however, a decision on how many PC should
+be included. With *mePipe* it is possible to carry out a PCA and automatically
+select a suitable number of PC to include as covariates. The selection process
+is based on a heuristic that seeks to maximise the number of significant eQTL.
+Optionally PC that exhibit significant correlation with genotypes may be excluded
+from the selection process.
 
 ## Testing for interactions between SNPs and a single covariate
 
