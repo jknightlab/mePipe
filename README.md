@@ -28,11 +28,11 @@ biocLite(c("MatrixEQTL", "trio", "optparse", "XML", "snow"))
 ```
 
 Unfortunately `Rsge` has recently been removed from CRAN. 
-The latest version is available from [here](https://github.com/humburg/Rsge). Download the source 
-distribution to your home directory and (on the machine on which you intend to run Matrix-eQTL) run
+The latest version is available from [here](https://github.com/humburg/Rsge). To install the latest version
+directly from GitHub, use the following command from within R (requires the `devtools` package)
 
-```sh
-R CMD INSTALL Rsge_0.6.4.tar.gz
+```R
+devtools::install_github("Rsge", "humburg")
 ```
 
 ### Installing mePipe from source
