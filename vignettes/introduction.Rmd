@@ -141,8 +141,14 @@ One for trans associations (called `foo` in the examples above) and one for the
 cis associations (`foo.cis`).
 
 ## Using covariates
+It is often desirable to include additional covariates, i.e. variables other than the SNP
+to be tested, into the analysis. Suitably chosen covariates can explain some of the 
+(often substantial) variation in gene expression observed between individuals that is not due 
+to genetic effects. Several mechanisms are provided by mePipe to either [utilise existing 
+files](#predefined-covariates) with data for covariates or to [generate a file](#pca-covariates) 
+with covariates from the data.
 
-### Predefined covariates
+### Predefined covariates {#pca-covariates}
 
 ### Selecting principle components as covariates
 
