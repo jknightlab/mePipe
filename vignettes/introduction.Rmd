@@ -12,7 +12,7 @@ vignette: >
 ---
 
 # Introduction
-The `mePipe` package provides a command-line interface to commonly used `MatrixEQTL` 
+The *mePipe* package provides a command-line interface to commonly used `MatrixEQTL` 
 functionality and augments this with additional features that are useful for a typical 
 eQTL analysis. These include the use (and automatic selection) of principal components 
 as covariates to account for confounding variation, accounting for LD structure and 
@@ -144,7 +144,7 @@ cis associations (`foo.cis`).
 It is often desirable to include additional covariates, i.e. variables other than the SNP
 to be tested, into the analysis. Suitably chosen covariates can explain some of the 
 (often substantial) variation in gene expression observed between individuals that is not due 
-to genetic effects. Several mechanisms are provided by mePipe to either [utilise existing 
+to genetic effects. Several mechanisms are provided by *mePipe* to either [utilise existing 
 files](#predefined-covariates) with data for covariates or to [generate a file](#pca-covariates) 
 with covariates from the data.
 
@@ -167,7 +167,7 @@ XML libraries to be available on the system. These have to be available on the c
 nodes.
 
 ## Submitting jobs
-To run mePipe on the cluster simply add the `--cluster` to the command line when invoking 
+To run *mePipe* on the cluster simply add the `--cluster` to the command line when invoking 
 `runMatrixEQTL.R`. For example, to run the above position aware analysis on the cluster 
 the command line would be
 
