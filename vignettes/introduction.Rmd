@@ -11,7 +11,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
-# Using mePipe
+# Introduction
 The `mePipe` package provides a command-line interface to commonly used `MatrixEQTL` 
 functionality and augments this with additional features that are useful for a typical 
 eQTL analysis. These include the use (and automatic selection) of principal components 
@@ -26,8 +26,8 @@ to the file on the file system if it isn't located in the working directory) of 
 file containing the gene expression data. Similarly, `genotype_file` refers to the 
 file with the genotyping information.
 
-## File formats
-### Input files
+# File formats
+## Input files
 Input files (gene expression measurements, genotypes and covariates) are plain text 
 files with samples in columns and variables (genes, SNPs or other variables) in rows. 
 *Note that these data are often stored with samples in rows. 
@@ -52,19 +52,19 @@ and three columns of row (variable) labels.
 runMatrixEQTL.R --rowskip=2 --colskip=3 expression_file genotype_file
 ``` 
 
-### Genotype format
+## Genotype format
 Genotypes have to be encoded numerically with a single entry for each site per sample. 
 For this `0`, `1` and `2` should be used in the usual fashion. This encoding is mandatory 
 if LD calculations are carried out (see [below](#ldblocks)). For the additive model 
 (without LD computations) any numerical value is acceptable and this can be used to account 
 for genotyping (or imputation) uncertainty. 
 
-#### Converting from other formats
+### Converting from other formats
 Often genotyping information is stored in a different format to the one required by 
 Matrix-eQTL. Some scripts to help with the conversion from common formats are available:
 [[ListTagged(fileConversion mePipe)]]
 
-### Output files {#mainout}
+## Output files {#mainout}
 The main output [produced by Matrix-eQTL](http://www.bios.unc.edu/research/genomic_software/Matrix_eQTL/manual.html#off)
 are tab-delimited text files with SNP-gene associations. These files have five columns 
 listing SNP ID, gene (or probe) name, value of the test statistic, p-value and FDR. 
@@ -73,7 +73,7 @@ The p-value column is the one referred to by the threshold that is set with the 
  output. All other combinations are discarded by Matrix-eQTL.
 
 
-## Basic analysis
+# Basic analysis
 A basic analysis that assumes an additive effect of genotype on gene expression and 
 doesn't distinguish between cis- and trans-effects can be run as follows.
 
@@ -98,7 +98,7 @@ To test for dominant as well as additive effects use the `--anova` flag:
 runMatrixEQTL.R --output=foo --anova expression_file genotype_file
 ```
 
-### Output
+## Output
 All the examples in this section produce a single text file `foo` in the working directory 
 with [standard Matrix-eQTL output](#mainout).
 
@@ -107,7 +107,7 @@ This may be useful for some further processing or plotting of the data but is us
 needed.
 
 
-## Position aware analysis
+# Position aware analysis
 To distinguish between cis- and trans-associations two additional input files are 
 required to provide genomic locations of SNPs (this file will be referred to as `snp_pos` 
 in the following) and genes (`gene_pos`). Both files should be either tab or space delimited 
@@ -135,12 +135,12 @@ runMatrixEQTL.R --output=foo  --snpspos=snp_pos --genepos=gene_pos --cisDist=5e6
 ```
 
 
-### Output
+## Output
 The position aware analysis produces two output files in the usual [Matrix-eQTL output format](#mainout). 
 One for trans associations (called `foo` in the examples above) and one for the 
 cis associations (`foo.cis`).
 
-## Using covariates
+# Using covariates
 It is often desirable to include additional covariates, i.e. variables other than the SNP
 to be tested, into the analysis. Suitably chosen covariates can explain some of the 
 (often substantial) variation in gene expression observed between individuals that is not due 
@@ -148,25 +148,25 @@ to genetic effects. Several mechanisms are provided by mePipe to either [utilise
 files](#predefined-covariates) with data for covariates or to [generate a file](#pca-covariates) 
 with covariates from the data.
 
-### Predefined covariates {#pca-covariates}
+## Predefined covariates {#pca-covariates}
 
-### Selecting principle components as covariates
+## Selecting principle components as covariates
 
-### Testing for interactions between SNPs and a single covariate
+## Testing for interactions between SNPs and a single covariate
 
-### Output
+## Output
 
-## Accounting for LD structure {#ldblocks}
+# Accounting for LD structure {#ldblocks}
 
-### Output
+## Output
 
-## Running mePipe on SGE {#oncluster}
-### Setting up the environment
+# Running mePipe on SGE {#oncluster}
+## Setting up the environment
 The [XML](http://cran.r-project.org/web/packages/XML/index.html) package relies on 
 XML libraries to be available on the system. These have to be available on the compute 
 nodes.
 
-### Submitting jobs
+## Submitting jobs
 To run mePipe on the cluster simply add the `--cluster` to the command line when invoking 
 `runMatrixEQTL.R`. For example, to run the above position aware analysis on the cluster 
 the command line would be
@@ -179,4 +179,4 @@ Note that the script will continue to run until all jobs have completed. It may 
 be advisable to use [nohup](http://en.wikipedia.org/wiki/Nohup).
 
 
-## Plotting the p-value distribution
+# Plotting the p-value distribution
