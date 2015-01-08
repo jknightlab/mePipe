@@ -205,9 +205,46 @@ these can be accomplished by including the `--filtercov` flag in the command-lin
 The relevant FDR threshold can be set with the `--excludecov` argument. This will 
 generate an additional file containing only the remaining principle components.  
 
-# Accounting for LD structure {#ldblocks}
+# Accounting for LD structure
 
-## Output
+## Resolving multiple cis-associations for the same gene
+Once a cis-eQTL has been identified the question may arise whether the observed signal
+is due to a single SNP or whether there are indeed several SNPs that contribute
+independently to the modulation of gene expression. Due to the LD around the observed 
+lead SNP and possibility that independent signals may be masking each other, this
+is not a trivial question. One commonly used way to further investigate this is
+through conditional analysis. This involves fitting a model that contains the lead SNP
+as well as one other candidate SNP. This then provides an estimate of the effect of 
+the additional SNP while controling for the effect of the lead SNP. If a sufficiently 
+strong signal exists that isn't explained by the lead SNP, this process will result
+in a number of significant hits. From these the one with the smallest p-value
+can agin be chosen as (secondary) lead SNP. This process can then be iterated (now
+using a model including all previously identified lead SNPs) until no significant 
+signal remains. With *mePipe* this analysis can be carried out by using the `--multiPeak`
+flag. The p-value threshold up to which remaining associations should be considered 
+significant can be set with the `--multiPvalue` argument.
+
+Sometimes it is convenient to just run this analysis for a specific gene that is of 
+particular interest. This can be enabled with the `--multiGene` argument. 
+This is particularly useful when combined with the `--ldOnly` flag that allows 
+the use of an existing primary analysis, only running additional LD related computations
+(like the multi peak analysis).
+
+It is important to note a few limitations of this approach. Firstly, this approach
+can produce a substantial number of false positives if the data don't contain
+a good tag SNP. In this situation the observed lead SNP will only explain a fraction of
+the underlying signal and the conditional analysis may highlight a large number of 
+additional SNPs, each explaining a small part of the same underlying signal. It is
+therefore recommended to apply this approach to data that include imputed genotypes.
+Secondly, including two SNPs in strong LD into the same model is unlikely to give
+accurate results due to colinearity of the two variables. Of course such SNPs are also 
+unlikely to provide two independent sources of variation. It therefore is prudent to 
+exclude SNPs that are strongly correlated with previously identified lead SNPs. This
+can significantly reduce the time required for these computations, especially when 
+working with imputed data. The corresponding \(R^2\) threshold can be set with the 
+`--ldR2` option.  
+
+## Identifying LD blocks {#ldblocks}
 
 # Running mePipe on SGE {#oncluster}
 ## Setting up the environment
