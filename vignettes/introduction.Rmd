@@ -173,9 +173,37 @@ is based on a heuristic that seeks to maximise the number of significant eQTL.
 Optionally PC that exhibit significant correlation with genotypes may be excluded
 from the selection process.
 
-## Testing for interactions between SNPs and a single covariate
+A number of command-line options are available to control the use of PC covariates.
+The `--pcacov` option provides the name of a file with all principle components. This
+defaults to the ouput file prefix followed by `_pca_covariates.txt` and will be 
+generated automatically, using `prcomp`, if it doesn't exist. If the number of 
+PC that should be included is known it can be provided directly using the `--ciscov`,
+`--transcov` and `--allcov` arguments for cis, trans and combined analysis respectively. 
 
-## Output
+If the number of PC to use is to be determined from the data the `--selectcov` flag
+has to be included in the command-line. The `--mincov`, `--maxcov`
+and `--stepcov` arguments can then be used to specify the range of covariates that should be 
+tested for their performance. This will determine the number of significant associations
+for every `stepcov` PC between `mincov` and `maxcov`. For example, if these variables are set 
+to 5, 5 and 20 respectively, models including 5, 10, 15 and 20 PC will be evaluated. 
+The output for all evaluated models is stored in the directory indicated by `--covout`
+and output for the model chosen as the best will be copied to the files indicated by
+`--output`. This process also produces a plot, located in the file *CovVsEQTL.pdf*
+in the `covout` directory, of the number of identified eQTL for each model. The 
+`--covthreshold` argument can be used to define an FDR significance threshold for associations
+to be included in this plot. It is recommend to check this plot to confirm that 
+the chosen number of covariates is sensible. If a different choice seems more 
+appropriate the corresponding results can simply be obtained from the files in `covout`.
+
+When using principle components as covariates it is assumed that the major sources of
+variation observed in gene expression between individuals are not genetic. Although
+this appears to be the case in general, there are instances where some PC show
+significant correlation with genotypes. It may be desirable not to include such
+PC as covariates in the model. Similarly, it makes sense to exclude any PC that 
+is correlated with predefined covariates (provided via `--covariates`). Both of 
+these can be accomplished by including the `--filtercov` flag in the command-line.
+The relevant FDR threshold can be set with the `--excludecov` argument. This will 
+generate an additional file containing only the remaining principle components.  
 
 # Accounting for LD structure {#ldblocks}
 
