@@ -211,9 +211,12 @@ generate an additional file containing only the remaining principle components.
 
 # Running mePipe on SGE {#oncluster}
 ## Setting up the environment
-The [XML](http://cran.r-project.org/web/packages/XML/index.html) package relies on 
-XML libraries to be available on the system. These have to be available on the compute 
-nodes.
+All dependencies have to be available on the compute nodes. Typically, using an R 
+library that is shared between all nodes is sufficient. A notable exception is the 
+[XML](http://cran.r-project.org/web/packages/XML/index.html) package, as it relies on 
+XML libraries to be available on the system. An R session running on a compute node
+has to be able to find a version of the XML library that matches the one the 
+package was compiled against.
 
 ## Submitting jobs
 To run *mePipe* on the cluster simply add the `--cluster` to the command line when invoking 
