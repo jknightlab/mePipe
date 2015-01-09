@@ -245,6 +245,25 @@ working with imputed data. The corresponding \(R^2\) threshold can be set with t
 `--ldR2` option.  
 
 ## Identifying LD blocks {#ldblocks}
+In addition to identifying independent associations it is also useful to better 
+characterise the extend of a region related to an observed association. Two different 
+methods for this are implemented in `mePipe`. The first, available through the `--ldBlocks`
+flag, attempts to identify LD blocks that contain lead SNPs. This is based on the
+`findLDblocks` function in the [trio](http://www.bioconductor.org/packages/release/bioc/html/trio.html)
+package. Since this procedure is time consuming and computations on entire 
+chromosomes aren't feasible it is necessary to select a (small) number of candidate
+SNPs in advance. Two different parameters are available to control the selection
+of SNPs that are included in the computations for each lead SNP. The maximum distance 
+between two adjacent SNPs in the same block is set with `--maxDist` and the total number
+of SNPs allowed per block can be set with `--maxSNPs`. This helps to avoid prohibitive 
+run times, but comes with the risk of truncating blocks.
+
+The second method available is based on computing a pairwise measure of LD (currently only
+\(R^2\) is implemented). Unlike the block based approach this makes no real attempt to
+resolve local LD structure. Instead, all SNPs that show sufficiently high LD with the
+lead SNP are grouped together. What is considered to be 'sufficiently high' can be defined
+either through a threshold on the LD measure (via the `--ldR2` argument) or through a
+p-value threshold (using the `--ldPvalR2` argument).
 
 # Running mePipe on SGE {#oncluster}
 ## Setting up the environment
