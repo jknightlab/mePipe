@@ -269,3 +269,12 @@ be advisable to use [nohup](http://en.wikipedia.org/wiki/Nohup).
 
 
 # Plotting the p-value distribution
+It may be of interest to study the distribution of p-values of all SNP-gene pairs
+considered during the initial analysis. Because Matrix-eQTL only returns results
+for pairs that reached a minimum level of significance this cannot be done after
+the analysis run is complete. Instead Matrix-eQTL has to be instructed to collect
+and output the relevant information. The output can either take the form of a 
+histogram or a QQ-plot. To generate a histogram set the `--bins` argument to 
+something larger than 0. This will cause Matrix-eQTL to count the number of 
+times a p-value is observed for each of the equally sized bins. To obtain
+a QQ-plot instead add the `--qqplot` flag to the command-line.
