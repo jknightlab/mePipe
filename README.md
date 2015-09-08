@@ -1,4 +1,4 @@
-# The mePipe package
+# The mePipe package [![Build Status](https://travis-ci.org/jknightlab/mePipe.svg?branch=master)](https://travis-ci.org/jknightlab/mePipe)
 
 The `mePipe` R package provides a convenient way to carry out several steps that are often required as part 
 of an eQTL analysis. [Matrix-eQTL](http://www.bios.unc.edu/research/genomic_software/Matrix_eQTL/) is used 
